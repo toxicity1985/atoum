@@ -494,11 +494,17 @@ class generator
     {
         $propertiesCode = '';
         
-        // Only generate property hooks and asymmetric visibility on PHP 8.4+
+        // PHP 8.0+ : Generate promoted properties from constructor
+        if (method_exists(\ReflectionParameter::class, 'isPromoted')) {
+            $propertiesCode .= $this->generatePromotedProperties($class);
+        }
+        
+        // PHP 8.4+ : Generate property hooks
         if (method_exists(\ReflectionProperty::class, 'getHooks')) {
             $propertiesCode .= $this->generatePropertiesWithHooks($class);
         }
         
+        // PHP 8.4+ : Generate asymmetric visibility
         if (method_exists(\ReflectionProperty::class, 'isPublicSet')) {
             $propertiesCode .= $this->generatePropertiesWithAsymmetricVisibility($class);
         }
@@ -1033,6 +1039,62 @@ class generator
     private static function generateUniqueId()
     {
         return "\t\t" . '$this->{\'mock\' . uniqid()} = true;' . PHP_EOL;
+    }
+
+    /**
+     * Generate promoted properties from constructor (PHP 8.0+)
+     */
+    protected function generatePromotedProperties(\ReflectionClass $class): string
+    {
+        $propertiesCode = '';
+        
+        $constructor = $class->getConstructor();
+        if ($constructor === null) {
+            return '';
+        }
+        
+        foreach ($constructor->getParameters() as $parameter) {
+            try {
+                if (method_exists($parameter, 'isPromoted') && $parameter->isPromoted()) {
+                    $propertiesCode .= $this->generatePromotedProperty($parameter);
+                }
+            } catch (\Throwable $e) {
+                // Skip parameters that can't be analyzed (e.g., mocked parameters)
+                continue;
+            }
+        }
+        
+        return $propertiesCode;
+    }
+    
+    /**
+     * Generate code for a single promoted property
+     */
+    protected function generatePromotedProperty(\ReflectionParameter $parameter): string
+    {
+        $propertyName = $parameter->getName();
+        
+        // Get the property from the class to determine visibility
+        $reflector = $parameter->getDeclaringFunction()->getDeclaringClass();
+        $property = $reflector->getProperty($propertyName);
+        
+        $visibility = 'public';
+        if ($property->isProtected()) {
+            $visibility = 'protected';
+        } elseif ($property->isPrivate()) {
+            $visibility = 'private';
+        }
+        
+        // Get property type
+        $typeHint = '';
+        if ($property->hasType()) {
+            $typeHint = $this->getPropertyType($property);
+            if ($typeHint !== '') {
+                $typeHint .= ' ';
+            }
+        }
+        
+        return "\t" . $visibility . ' ' . $typeHint . '$' . $propertyName . ';' . PHP_EOL;
     }
 
     /**

@@ -3464,6 +3464,62 @@ class generator extends atoum\test
         ;
     }
 
+    /** @php >= 8.0 */
+    public function testGetMockedClassCodeWithPromotedProperties()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithPromotedProperties') ?: $this->skip('Promoted properties not available'))
+            ->then
+                ->string($code = $generator->getMockedClassCode(__NAMESPACE__ . '\classWithPromotedProperties'))
+                    ->contains('namespace mock\\' . __NAMESPACE__)
+                    ->contains('class classWithPromotedProperties extends')
+                    ->contains('implements \atoum\atoum\mock\aggregator')
+                    
+                    // Should contain promoted properties declarations
+                    ->contains('public string $name;')
+                    ->contains('private int $age;')
+                    ->contains('protected float $score;')
+        ;
+    }
+
+    /** @php >= 8.0 */
+    public function testMockedClassWithPromotedPropertiesIsAccessible()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithPromotedProperties') ?: $this->skip('Promoted properties not available'))
+            ->and($mockedClassName = $generator->generate(__NAMESPACE__ . '\classWithPromotedProperties'))
+            ->and($fullClassName = 'mock\\' . __NAMESPACE__ . '\classWithPromotedProperties')
+            ->and($mock = new $fullClassName('Alice', 30, 95.5))
+            ->then
+                // Can access public property
+                ->string($mock->name)->isEqualTo('Alice')
+                
+                // Can modify public property
+                ->when(function() use ($mock) { $mock->name = 'Bob'; })
+                ->then
+                    ->string($mock->name)->isEqualTo('Bob')
+                
+                // Can call method that uses promoted properties
+                ->string($mock->getName())->isEqualTo('Bob')
+        ;
+    }
+
+    /** @php >= 8.0 */
+    public function testMockedClassWithMixedPromotedAndRegularProperties()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithMixedProperties') ?: $this->skip('Promoted properties not available'))
+            ->then
+                ->string($code = $generator->getMockedClassCode(__NAMESPACE__ . '\classWithMixedProperties'))
+                    // Should contain promoted property
+                    ->contains('public string $name;')
+                    // Should NOT duplicate regular properties (they're inherited)
+        ;
+    }
+
     protected function getMockControllerMethods()
     {
         return
@@ -4226,6 +4282,63 @@ if (version_compare(PHP_VERSION, '8.4.0', '>=') && class_exists(\Deprecated::cla
             public function getNewConstant(): string
             {
                 return self::NEW_CONSTANT;
+            }
+        }
+    ');
+}
+
+/**
+ * PHP 8.0+ Test Classes - Constructor Property Promotion
+ * These classes are only used for testing when PHP 8.0+ is available
+ */
+if (version_compare(PHP_VERSION, '8.0.0', '>=')) {
+    eval('
+        namespace atoum\atoum\tests\units\mock;
+        
+        /**
+         * Test class with promoted properties
+         */
+        class classWithPromotedProperties
+        {
+            public function __construct(
+                public string $name,
+                private int $age,
+                protected float $score
+            ) {}
+            
+            public function getName(): string
+            {
+                return $this->name;
+            }
+            
+            public function getAge(): int
+            {
+                return $this->age;
+            }
+            
+            public function getScore(): float
+            {
+                return $this->score;
+            }
+        }
+        
+        /**
+         * Test class with mixed promoted and regular properties
+         */
+        class classWithMixedProperties
+        {
+            private string $email = "";
+            
+            public function __construct(
+                public string $name,
+                int $age
+            ) {
+                $this->email = strtolower($name) . "@example.com";
+            }
+            
+            public function getEmail(): string
+            {
+                return $this->email;
             }
         }
     ');
