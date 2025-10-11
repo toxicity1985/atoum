@@ -3287,6 +3287,183 @@ class generator extends atoum\test
         ;
     }
 
+    /** @php >= 8.4 */
+    public function testGetMockedClassCodeWithPropertyHooks()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithPropertyHooks') ?: $this->skip('Property hooks not available'))
+            ->then
+                ->string($code = $generator->getMockedClassCode(__NAMESPACE__ . '\classWithPropertyHooks'))
+                    ->contains('namespace mock\\' . __NAMESPACE__)
+                    ->contains('class classWithPropertyHooks extends')
+                    ->contains('implements \atoum\atoum\mock\aggregator')
+                    
+                    // Should contain property hooks
+                    ->contains('$validated')
+                    ->contains('get {')
+                    ->contains('set(string $value) {')  // Type must match property type
+                    
+                    // Should route through mock controller
+                    ->contains('$this->getMockController()->invoke(\'__get_validated\'')
+                    ->contains('$this->getMockController()->invoke(\'__set_validated\'')
+                    
+                    // Should contain regular methods
+                    ->contains('public function getValue()')
+                    ->contains('public static function getMockedMethods()')
+        ;
+    }
+
+    /** @php >= 8.4 */
+    public function testMockedPropertyHooksAreCallable()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithPropertyHooks') ?: $this->skip('Property hooks not available'))
+            ->and($mockedClassName = $generator->generate(__NAMESPACE__ . '\classWithPropertyHooks'))
+            ->and($fullClassName = 'mock\\' . __NAMESPACE__ . '\classWithPropertyHooks')
+            ->and($mock = new $fullClassName())
+            ->then
+                // Disable method checking for property hooks
+                ->if($mock->getMockController()->disableMethodChecking())
+                
+                // Test get hook
+                ->and($mock->getMockController()->__get_validated = 'mocked value')
+                ->then
+                    ->string($mock->validated)->isEqualTo('mocked value')
+                    ->mock($mock)
+                        ->call('__get_validated')->once()
+                
+                // Test set hook
+                ->if($mock->getMockController()->__set_validated = null)
+                ->when(function() use ($mock) { $mock->validated = 'test'; })
+                ->then
+                    ->mock($mock)
+                        ->call('__set_validated')->withArguments('test')->once()
+        ;
+    }
+
+    /** @php >= 8.4 */
+    public function testGetMockedClassCodeWithAsymmetricVisibility()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithAsymmetricVisibility') ?: $this->skip('Asymmetric visibility not available'))
+            ->then
+                ->string($code = $generator->getMockedClassCode(__NAMESPACE__ . '\classWithAsymmetricVisibility'))
+                    ->contains('namespace mock\\' . __NAMESPACE__)
+                    ->contains('class classWithAsymmetricVisibility extends')
+                    ->contains('implements \atoum\atoum\mock\aggregator')
+                    
+                    // Should contain asymmetric visibility
+                    ->contains('public private(set)')
+                    ->contains('$balance')
+                    
+                    // Should contain regular methods
+                    ->contains('public function deposit(')
+                    ->contains('public static function getMockedMethods()')
+        ;
+    }
+
+    /** @php >= 8.4 */
+    public function testMockedClassWithAsymmetricVisibilityIsReadOnly()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithAsymmetricVisibility') ?: $this->skip('Asymmetric visibility not available'))
+            ->and($mockedClass = $generator->generate(__NAMESPACE__ . '\classWithAsymmetricVisibility'))
+            ->and($mock = new $mockedClass())
+            ->then
+                // Can read the property
+                ->float($mock->balance)->isEqualTo(0.0)
+                
+                // Cannot write directly (PHP 8.4 will throw error)
+                ->exception(function() use ($mock) {
+                    $mock->balance = 100.0;
+                })
+                    ->isInstanceOf(\Error::class)
+                
+                // But can modify through methods
+                ->when(function() use ($mock) {
+                    $mock->deposit(50.0);
+                })
+                ->then
+                    ->float($mock->balance)->isEqualTo(50.0)
+        ;
+    }
+
+    /** @php >= 8.4 */
+    public function testGetMockedClassCodeWithDeprecatedMethods()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithDeprecatedMethods') ?: $this->skip('Deprecated attribute not available'))
+            ->then
+                ->string($code = $generator->getMockedClassCode(__NAMESPACE__ . '\classWithDeprecatedMethods'))
+                    ->contains('namespace mock\\' . __NAMESPACE__)
+                    ->contains('class classWithDeprecatedMethods extends')
+                    ->contains('implements \atoum\atoum\mock\aggregator')
+                    
+                    // Should contain both deprecated and non-deprecated methods
+                    ->contains('public function oldMethod(')
+                    ->contains('public function newMethod(')
+                    ->contains('public static function getMockedMethods()')
+        ;
+    }
+
+    /** @php >= 8.4 */
+    public function testMockingDeprecatedMethod()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithDeprecatedMethods') ?: $this->skip('Deprecated attribute not available'))
+            ->and($mockedClassName = $generator->generate(__NAMESPACE__ . '\classWithDeprecatedMethods'))
+            ->and($fullClassName = 'mock\\' . __NAMESPACE__ . '\classWithDeprecatedMethods')
+            ->and($mock = new $fullClassName())
+            ->then
+                // Deprecated method can still be mocked and called
+                ->if($mock->getMockController()->oldMethod = 'mocked old')
+                ->then
+                    ->string($mock->oldMethod())->isEqualTo('mocked old')
+                    ->mock($mock)
+                        ->call('oldMethod')->once()
+                
+                // Non-deprecated method works as usual
+                ->if($mock->getMockController()->newMethod = 'mocked new')
+                ->then
+                    ->string($mock->newMethod())->isEqualTo('mocked new')
+                    ->mock($mock)
+                        ->call('newMethod')->once()
+        ;
+    }
+
+    /** @php >= 8.4 */
+    public function testMockingClassWithDeprecatedConstants()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithDeprecatedConstants') ?: $this->skip('Deprecated attribute not available'))
+            ->and($mockedClassName = $generator->generate(__NAMESPACE__ . '\classWithDeprecatedConstants'))
+            ->and($fullClassName = 'mock\\' . __NAMESPACE__ . '\classWithDeprecatedConstants')
+            ->and($mock = new $fullClassName())
+            ->then
+                // Can create mock of class with deprecated constants
+                ->object($mock)
+                    ->isInstanceOf(__NAMESPACE__ . '\classWithDeprecatedConstants')
+                
+                // Non-deprecated constants are accessible without warnings
+                ->string($fullClassName::NEW_CONSTANT)->isEqualTo('new_value')
+                
+                // Note: We don't test OLD_CONSTANT directly to avoid E_USER_DEPRECATED warning
+                // The deprecated constant exists and is inherited, but accessing it triggers a deprecation notice
+                
+                // Methods can be mocked
+                ->if($mock->getMockController()->getOldConstant = 'mocked')
+                ->then
+                    ->string($mock->getOldConstant())->isEqualTo('mocked')
+        ;
+    }
+
     protected function getMockControllerMethods()
     {
         return
@@ -3857,6 +4034,7 @@ class generator extends atoum\test
 
 class mockable
 {
+    public $name;
 }
 
 class foo
@@ -3876,4 +4054,179 @@ class classWithScalarTypeHints
     {
         return $bar * 2;
     }
+}
+
+/**
+ * Test class with PHP 8.4 property hooks
+ * This class is only used for testing when PHP 8.4+ is available
+ * 
+ * Note: This syntax will cause parse errors on PHP < 8.4
+ * To handle this, the class should be conditionally loaded
+ */
+if (version_compare(PHP_VERSION, '8.4.0', '>=') && method_exists(\ReflectionProperty::class, 'getHooks')) {
+    // Use eval to avoid parse errors on PHP < 8.4
+    eval('
+        namespace atoum\atoum\tests\units\mock;
+        
+        class classWithPropertyHooks
+        {
+            /**
+             * Property with both get and set hooks
+             */
+            public string $validated {
+                get {
+                    return $this->validated ?? "";
+                }
+                
+                set(string $value) {
+                    if (strlen($value) < 3) {
+                        throw new \ValueError("Value too short");
+                    }
+                    $this->validated = $value;
+                }
+            }
+            
+            /**
+             * Computed property (get-only)
+             */
+            public string $computed {
+                get => strtoupper($this->validated ?? "");
+            }
+            
+            /**
+             * Regular method
+             */
+            public function getValue(): string
+            {
+                return $this->validated;
+            }
+        }
+    ');
+}
+
+/**
+ * Test class with PHP 8.4 asymmetric visibility
+ * This class is only used for testing when PHP 8.4+ is available
+ */
+if (version_compare(PHP_VERSION, '8.4.0', '>=') && method_exists(\ReflectionProperty::class, 'isPublicSet')) {
+    // Use eval to avoid parse errors on PHP < 8.4
+    eval('
+        namespace atoum\atoum\tests\units\mock;
+        
+        class classWithAsymmetricVisibility
+        {
+            /**
+             * Balance is public for reading, private for writing
+             */
+            public private(set) float $balance = 0.0;
+            
+            /**
+             * Transaction count (read-only)
+             */
+            public private(set) int $transactionCount = 0;
+            
+            /**
+             * Regular property (no asymmetric visibility)
+             */
+            public string $name = "";
+
+            public function deposit(float $amount): void
+            {
+                if ($amount <= 0) {
+                    throw new \ValueError("Amount must be positive");
+                }
+                $this->balance += $amount;
+                $this->transactionCount++;
+            }
+
+            public function withdraw(float $amount): void
+            {
+                if ($amount <= 0) {
+                    throw new \ValueError("Amount must be positive");
+                }
+                if ($amount > $this->balance) {
+                    throw new \ValueError("Insufficient funds");
+                }
+                $this->balance -= $amount;
+                $this->transactionCount++;
+            }
+
+            public function getBalance(): float
+            {
+                return $this->balance;
+            }
+        }
+    ');
+}
+
+/**
+ * Test classes with PHP 8.4 #[\Deprecated] attribute
+ * These classes are only used for testing when PHP 8.4+ is available
+ */
+if (version_compare(PHP_VERSION, '8.4.0', '>=') && class_exists(\Deprecated::class, false)) {
+    // Use eval to avoid parse errors on PHP < 8.4
+    eval('
+        namespace atoum\atoum\tests\units\mock;
+        
+        /**
+         * Test class with deprecated methods
+         */
+        class classWithDeprecatedMethods
+        {
+            /**
+             * Old method marked as deprecated
+             */
+            #[\Deprecated(message: "Use newMethod() instead", since: "2.0")]
+            public function oldMethod(): string
+            {
+                return "old implementation";
+            }
+
+            /**
+             * New method (not deprecated)
+             */
+            public function newMethod(): string
+            {
+                return "new implementation";
+            }
+
+            /**
+             * Deprecated static method
+             */
+            #[\Deprecated]
+            public static function oldStaticMethod(): string
+            {
+                return "old static";
+            }
+
+            /**
+             * New static method
+             */
+            public static function newStaticMethod(): string
+            {
+                return "new static";
+            }
+        }
+
+        /**
+         * Class with deprecated constants (PHP 8.4+ allows Deprecated on constants)
+         */
+        class classWithDeprecatedConstants
+        {
+            #[\Deprecated(message: "Use NEW_CONSTANT instead", since: "2.0")]
+            public const OLD_CONSTANT = "old_value";
+            
+            public const NEW_CONSTANT = "new_value";
+            
+            public function getOldConstant(): string
+            {
+                return self::OLD_CONSTANT;
+            }
+            
+            public function getNewConstant(): string
+            {
+                return self::NEW_CONSTANT;
+            }
+        }
+    ');
 }

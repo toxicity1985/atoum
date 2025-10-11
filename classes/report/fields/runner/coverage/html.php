@@ -171,7 +171,9 @@ class html extends report\fields\runner\coverage\cli
                             $methodLines[$reflectedMethod->getStartLine()] = $reflectedMethodName;
                         }
 
-                        for ($currentMethod = null, $lineNumber = 1, $line = $this->adapter->fgets($srcFile); $line !== false; $lineNumber++, $line = $this->adapter->fgets($srcFile)) {
+                        // PHP 8.4+: null as array key is deprecated, use empty string instead
+                        $initialMethod = version_compare(PHP_VERSION, '8.4.0', '>=') ? '' : null;
+                        for ($currentMethod = $initialMethod, $lineNumber = 1, $line = $this->adapter->fgets($srcFile); $line !== false; $lineNumber++, $line = $this->adapter->fgets($srcFile)) {
                             if (isset($methodLines[$lineNumber]) === true) {
                                 $currentMethod = $methodLines[$lineNumber];
                             }

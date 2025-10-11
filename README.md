@@ -8,6 +8,18 @@
 | 7.2 -> 8.1  | 4.X -> 4.1          |
 | 8.x         | 4.1 < 4.X (current) |
 
+## 🚀 Full PHP 8.0-8.4 Support
+
+*atoum* now has **complete support** for modern PHP features, including:
+
+- **PHP 8.0**: Constructor Property Promotion, Union Types, Named Arguments, Attributes
+- **PHP 8.1**: Readonly Properties, Intersection Types, Enums, Never Return Type
+- **PHP 8.2**: Readonly Classes, DNF Types, Standalone `true`/`false`/`null` types
+- **PHP 8.3**: `#[\Override]` Attribute, Typed Class Constants
+- **PHP 8.4**: Property Hooks, Asymmetric Visibility, `#[\Deprecated]` Attribute
+
+All these features are fully supported in the **mock generator**, ensuring your modern PHP code can be properly tested.
+
 ## A simple, modern and intuitive unit testing framework for PHP!
 
 Just like SimpleTest or PHPUnit, *atoum* is a unit testing framework specific to the [PHP](http://www.php.net) language.

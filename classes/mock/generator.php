@@ -492,11 +492,23 @@ class generator
 
     protected function generateClassCode(\reflectionClass $class, $mockNamespace, $mockClass)
     {
+        $propertiesCode = '';
+        
+        // Only generate property hooks and asymmetric visibility on PHP 8.4+
+        if (method_exists(\ReflectionProperty::class, 'getHooks')) {
+            $propertiesCode .= $this->generatePropertiesWithHooks($class);
+        }
+        
+        if (method_exists(\ReflectionProperty::class, 'isPublicSet')) {
+            $propertiesCode .= $this->generatePropertiesWithAsymmetricVisibility($class);
+        }
+        
         return ($this->useStrictTypes ? 'declare(strict_types=1);' . PHP_EOL : '') .
             'namespace ' . ltrim($mockNamespace, '\\') . ' {' . PHP_EOL .
             'final class ' . $mockClass . ' extends \\' . $class->getName() . ' implements \\' . __NAMESPACE__ . '\\aggregator' . PHP_EOL .
             '{' . PHP_EOL .
             self::generateMockControllerMethods() .
+            $propertiesCode .
             $this->generateClassMethodCode($class) .
             '}' . PHP_EOL .
             '}'
@@ -1021,5 +1033,208 @@ class generator
     private static function generateUniqueId()
     {
         return "\t\t" . '$this->{\'mock\' . uniqid()} = true;' . PHP_EOL;
+    }
+
+    /**
+     * Check if a property has hooks (PHP 8.4+)
+     */
+    protected function hasPropertyHooks(\ReflectionProperty $property): bool
+    {
+        try {
+            // method_exists() est plus rapide qu'un try/catch systématique
+            if (!method_exists($property, 'getHooks')) {
+                return false;
+            }
+            
+            $hooks = $property->getHooks();
+            return !empty($hooks);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Generate code for properties with hooks
+     */
+    protected function generatePropertiesWithHooks(\ReflectionClass $class): string
+    {
+        $propertiesCode = '';
+        
+        try {
+            foreach ($class->getProperties() as $property) {
+                if ($this->hasPropertyHooks($property)) {
+                    $propertiesCode .= $this->generatePropertyWithHook($class, $property);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignore errors when getting properties (e.g., mocked ReflectionClass on PHP 8.4+)
+        }
+
+        return $propertiesCode;
+    }
+
+    /**
+     * Generate code for a single property with hooks
+     */
+    protected function generatePropertyWithHook(\ReflectionClass $class, \ReflectionProperty $property): string
+    {
+        $propertyName = $property->getName();
+        $visibility = $this->getPropertyVisibility($property);
+        
+        // Get property type if available
+        $typeHint = $this->getPropertyType($property);
+        if ($typeHint !== '') {
+            $typeHint .= ' ';
+        }
+
+        $code = "\t" . $visibility . ' ' . $typeHint . '$' . $propertyName . ' {' . PHP_EOL;
+        
+        // Generate hooks
+        $hooks = $property->getHooks();
+        
+        // Note: hooks array uses string keys 'get' and 'set', not constants
+        if (isset($hooks['get'])) {
+            $code .= "\t\t" . 'get {' . PHP_EOL;
+            $code .= "\t\t\t" . 'return $this->getMockController()->invoke(\'__get_' . $propertyName . '\', []);' . PHP_EOL;
+            $code .= "\t\t" . '}' . PHP_EOL;
+        }
+        
+        if (isset($hooks['set'])) {
+            // For set hook, parameter type must match property type
+            $code .= "\t\t" . 'set(' . $typeHint . '$value) {' . PHP_EOL;
+            $code .= "\t\t\t" . '$this->getMockController()->invoke(\'__set_' . $propertyName . '\', [$value]);' . PHP_EOL;
+            $code .= "\t\t" . '}' . PHP_EOL;
+        }
+        
+        $code .= "\t" . '}' . PHP_EOL . PHP_EOL;
+        
+        return $code;
+    }
+
+    /**
+     * Get property type as string for code generation
+     */
+    protected function getPropertyType(\ReflectionProperty $property): string
+    {
+        if (!$property->hasType()) {
+            return '';
+        }
+
+        $type = $property->getType();
+        
+        if ($type instanceof \ReflectionNamedType) {
+            $typeName = $type->getName();
+            $nullable = $type->allowsNull() && $typeName !== 'mixed' ? '?' : '';
+            return $nullable . (!$type->isBuiltin() ? '\\' : '') . $typeName;
+        }
+        
+        if ($type instanceof \ReflectionUnionType) {
+            $types = array_map(
+                function (\ReflectionNamedType $t) {
+                    return (!$t->isBuiltin() ? '\\' : '') . $t->getName();
+                },
+                $type->getTypes()
+            );
+            return implode('|', $types);
+        }
+        
+        return '';
+    }
+
+    /**
+     * Check if a property has asymmetric visibility (PHP 8.4+)
+     */
+    protected function hasAsymmetricVisibility(\ReflectionProperty $property): bool
+    {
+        try {
+            // Check if PHP 8.4+ methods are available
+            if (!method_exists($property, 'isPublicSet')) {
+                return false;
+            }
+
+            // Get read visibility
+            $isPublicRead = $property->isPublic();
+            $isProtectedRead = $property->isProtected();
+            $isPrivateRead = $property->isPrivate();
+
+            // Get write visibility
+            $isPublicWrite = $property->isPublicSet();
+            $isProtectedWrite = $property->isProtectedSet();
+            $isPrivateWrite = $property->isPrivateSet();
+
+            // If read and write visibilities differ, it's asymmetric
+            if ($isPublicRead && !$isPublicWrite) {
+                return true;
+            }
+            if ($isProtectedRead && !$isProtectedWrite) {
+                return true;
+            }
+            if ($isPrivateRead && !$isPrivateWrite) {
+                return true;
+            }
+
+            return false;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Get property visibility declaration including asymmetric visibility (PHP 8.4+)
+     */
+    protected function getPropertyVisibility(\ReflectionProperty $property): string
+    {
+        $readVisibility = $property->isPublic() ? 'public' : 
+                         ($property->isProtected() ? 'protected' : 'private');
+
+        // Check for asymmetric visibility (PHP 8.4+)
+        if ($this->hasAsymmetricVisibility($property)) {
+            $writeVisibility = $property->isPublicSet() ? 'public' :
+                              ($property->isProtectedSet() ? 'protected' : 'private');
+            
+            return $readVisibility . ' ' . $writeVisibility . '(set)';
+        }
+
+        return $readVisibility;
+    }
+
+    /**
+     * Generate code for properties with asymmetric visibility
+     */
+    protected function generatePropertiesWithAsymmetricVisibility(\ReflectionClass $class): string
+    {
+        $propertiesCode = '';
+        
+        try {
+            foreach ($class->getProperties() as $property) {
+                if ($this->hasAsymmetricVisibility($property) && !$this->hasPropertyHooks($property)) {
+                    $propertiesCode .= $this->generatePropertyWithAsymmetricVisibility($property);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignore errors when getting properties (e.g., mocked ReflectionClass on PHP 8.4+)
+        }
+
+        return $propertiesCode;
+    }
+
+    /**
+     * Generate code for a single property with asymmetric visibility
+     */
+    protected function generatePropertyWithAsymmetricVisibility(\ReflectionProperty $property): string
+    {
+        $propertyName = $property->getName();
+        $visibility = $this->getPropertyVisibility($property);
+        
+        // Get property type if available
+        $typeHint = $this->getPropertyType($property);
+        if ($typeHint !== '') {
+            $typeHint .= ' ';
+        }
+
+        // For mocked properties with asymmetric visibility, we need to maintain the same visibility
+        $code = "\t" . $visibility . ' ' . $typeHint . '$' . $propertyName . ';' . PHP_EOL;
+        
+        return $code;
     }
 }
