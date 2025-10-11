@@ -18,7 +18,7 @@
 - **PHP 8.3**: `#[\Override]` Attribute, Typed Class Constants
 - **PHP 8.4**: Property Hooks, Asymmetric Visibility, `#[\Deprecated]` Attribute
 
-All these features are fully supported in the **mock generator**, ensuring your modern PHP code can be properly tested.
+All these features are fully supported in the **mock generator**, ensuring your modern PHP code can be properly tested. See [PHP_MODERN_SUPPORT.md](PHP_MODERN_SUPPORT.md) for detailed documentation.
 
 ## A simple, modern and intuitive unit testing framework for PHP!
 

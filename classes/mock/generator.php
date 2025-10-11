@@ -509,9 +509,19 @@ class generator
             $propertiesCode .= $this->generatePropertiesWithAsymmetricVisibility($class);
         }
         
+        // PHP 8.2+ : Check if class is readonly
+        $classModifiers = 'final ';
+        try {
+            if (method_exists($class, 'isReadOnly') && $class->isReadOnly()) {
+                $classModifiers .= 'readonly ';
+            }
+        } catch (\Throwable $e) {
+            // Ignore errors when checking for readonly class (e.g., mocked ReflectionClass)
+        }
+        
         return ($this->useStrictTypes ? 'declare(strict_types=1);' . PHP_EOL : '') .
             'namespace ' . ltrim($mockNamespace, '\\') . ' {' . PHP_EOL .
-            'final class ' . $mockClass . ' extends \\' . $class->getName() . ' implements \\' . __NAMESPACE__ . '\\aggregator' . PHP_EOL .
+            $classModifiers . 'class ' . $mockClass . ' extends \\' . $class->getName() . ' implements \\' . __NAMESPACE__ . '\\aggregator' . PHP_EOL .
             '{' . PHP_EOL .
             self::generateMockControllerMethods() .
             $propertiesCode .
@@ -686,54 +696,66 @@ class generator
         $returnType = $this->getReflectionType($method);
         $returnTypeName = $this->getReflectionTypeName($returnType);
         $isNullable = $returnType->allowsNull() === true;
-
-        switch (true) {
-            case $returnTypeName === 'self':
-                $returnTypeCode = ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getName();
-                break;
-
-            case $returnTypeName === 'parent':
-                $returnTypeCode = ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getParentClass()->getName();
-                break;
-
-            case $returnType instanceof \reflectionUnionType:
-                $types = [];
-                $declaringClass = $method->getDeclaringClass();
-
-                foreach ($returnType->getTypes() as $type) {
-                    $typeName = $type->getName();
-
-                    // Handle self, static, and parent in union types
-                    if ($typeName === 'self') {
-                        $types[] = '\\' . $declaringClass->getName();
-                    } elseif ($typeName === 'parent') {
-                        $parentClass = $declaringClass->getParentClass();
-                        $types[] = '\\' . $parentClass->getName();
-                    } elseif ($typeName === 'static') {
-                        $types[] = 'static';
-                    } else {
-                        $types[] = (!$type->isBuiltin() ? '\\' : '') . $typeName;
-                    }
-                }
-
-                $returnTypeCode = ': ' . implode('|', $types);
-                break;
-
-            case in_array($this->getReflectionTypeName($returnType), ['mixed', 'null']):
-                // 'mixed' and 'null' cannot be marked as nullable
-                $returnTypeCode = ': ' . $returnTypeName;
-                break;
-
-            case $returnTypeName === 'static':
-            case $returnType->isBuiltin():
-                $returnTypeCode = ': ' . ($isNullable ? '?' : '') . $returnTypeName;
-                break;
-
-            default:
-                $returnTypeCode = ': ' . ($isNullable ? '?' : '') . '\\' . $returnTypeName;
+        
+        // Handle special cases: self, parent, static
+        if ($returnType instanceof \reflectionNamedType) {
+            switch ($returnTypeName) {
+                case 'self':
+                    return ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getName();
+                
+                case 'parent':
+                    return ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getParentClass()->getName();
+                
+                case 'static':
+                    return ': ' . ($isNullable ? '?' : '') . $returnTypeName;
+                
+                case 'mixed':
+                case 'void':
+                case 'never':
+                    // These types cannot be marked as nullable
+                    return ': ' . $returnTypeName;
+                
+                // PHP 8.2+: Standalone null, true, false types
+                case 'null':
+                case 'true':
+                case 'false':
+                    // These standalone types are returned as-is
+                    return ': ' . $returnTypeName;
+            }
         }
-
-        return $returnTypeCode;
+        
+        // For complex types (Union, Intersection, DNF), use the generic formatter
+        if ($returnType instanceof \ReflectionUnionType 
+            || (class_exists(\ReflectionIntersectionType::class) && $returnType instanceof \ReflectionIntersectionType)) {
+            $formattedType = $this->formatReflectionType($returnType, $method);
+            return $formattedType !== '' ? ': ' . $formattedType : '';
+        }
+        
+        // Fallback for simple types (including mocked types and tentative return types)
+        // Handle special keywords
+        switch ($returnTypeName) {
+            case 'self':
+                return ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getName();
+            
+            case 'parent':
+                return ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getParentClass()->getName();
+            
+            case 'static':
+            case 'mixed':
+            case 'null':
+                return ': ' . ($isNullable && !in_array($returnTypeName, ['mixed', 'null']) ? '?' : '') . $returnTypeName;
+        }
+        
+        // Check if it's a builtin type (either directly or from mocked ReflectionType)
+        $isBuiltinType = ($returnType instanceof \reflectionNamedType && $returnType->isBuiltin()) 
+                      || ($returnType->isBuiltin());
+        
+        if ($isBuiltinType) {
+            return ': ' . ($isNullable ? '?' : '') . $returnTypeName;
+        }
+        
+        // For non-builtin types (classes), add backslash
+        return ': ' . ($isNullable ? '?' : '') . '\\' . $returnTypeName;
     }
 
     protected function hasReturnType(\reflectionMethod $method)
@@ -1181,6 +1203,7 @@ class generator
 
     /**
      * Get property type as string for code generation
+     * Supports: Named types, Union types, Intersection types (PHP 8.1+), DNF types (PHP 8.2+)
      */
     protected function getPropertyType(\ReflectionProperty $property): string
     {
@@ -1190,20 +1213,65 @@ class generator
 
         $type = $property->getType();
         
+        return $this->formatReflectionType($type);
+    }
+    
+    /**
+     * Format a ReflectionType into a string representation
+     * Handles: NamedType, UnionType, IntersectionType (PHP 8.1+), and DNF types (PHP 8.2+)
+     */
+    protected function formatReflectionType(\ReflectionType $type, ?\reflectionMethod $method = null): string
+    {
+        // PHP 8.0+: Named types
         if ($type instanceof \ReflectionNamedType) {
             $typeName = $type->getName();
-            $nullable = $type->allowsNull() && $typeName !== 'mixed' ? '?' : '';
+            
+            // Handle special keywords: self, parent, static
+            if ($method !== null) {
+                $declaringClass = $method->getDeclaringClass();
+                
+                if ($typeName === 'self') {
+                    $typeName = $declaringClass->getName();
+                } elseif ($typeName === 'parent') {
+                    $parentClass = $declaringClass->getParentClass();
+                    $typeName = $parentClass->getName();
+                } elseif ($typeName === 'static') {
+                    // 'static' is kept as-is (late static binding)
+                    $nullable = $type->allowsNull() && $typeName !== 'mixed' && $typeName !== 'null' ? '?' : '';
+                    return $nullable . $typeName;
+                }
+            }
+            
+            $nullable = $type->allowsNull() && $typeName !== 'mixed' && $typeName !== 'null' ? '?' : '';
             return $nullable . (!$type->isBuiltin() ? '\\' : '') . $typeName;
         }
         
+        // PHP 8.0+: Union types
         if ($type instanceof \ReflectionUnionType) {
             $types = array_map(
-                function (\ReflectionNamedType $t) {
-                    return (!$t->isBuiltin() ? '\\' : '') . $t->getName();
+                function ($t) use ($method) {
+                    return $this->formatReflectionType($t, $method);
                 },
                 $type->getTypes()
             );
             return implode('|', $types);
+        }
+        
+        // PHP 8.1+: Intersection types
+        if (class_exists(\ReflectionIntersectionType::class) && $type instanceof \ReflectionIntersectionType) {
+            $types = array_map(
+                function ($t) use ($method) {
+                    // For intersection types within DNF, we may need parentheses
+                    $formatted = $this->formatReflectionType($t, $method);
+                    // If the formatted type contains a union (|), wrap in parentheses
+                    if (strpos($formatted, '|') !== false) {
+                        return '(' . $formatted . ')';
+                    }
+                    return $formatted;
+                },
+                $type->getTypes()
+            );
+            return implode('&', $types);
         }
         
         return '';

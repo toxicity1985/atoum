@@ -3560,6 +3560,251 @@ class generator extends atoum\test
         ;
     }
 
+    /** @php >= 8.1 */
+    public function testGetMockedClassCodeWithIntersectionTypes()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithIntersectionTypes') ?: $this->skip('Intersection types not available'))
+            ->and($mockedClassCode = $generator->getMockedClassCode(__NAMESPACE__ . '\classWithIntersectionTypes'))
+            ->then
+                // Should contain the intersection type in method signature
+                ->string($mockedClassCode)
+                    ->contains('TestInterfaceA&')
+                    ->contains('TestInterfaceB')
+                    ->contains('public function process(')
+        ;
+    }
+
+    /** @php >= 8.2 */
+    public function testGetMockedClassCodeWithReadonlyClass()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\readonlyClass') ?: $this->skip('Readonly classes not available'))
+            ->and($mockedClassCode = $generator->getMockedClassCode(__NAMESPACE__ . '\readonlyClass'))
+            ->then
+                // Should contain 'readonly' modifier in class declaration
+                ->string($mockedClassCode)
+                    ->contains('final readonly class')
+        ;
+    }
+
+    /** @php >= 8.2 */
+    public function testMockedReadonlyClassIsImmutable()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\readonlyClass') ?: $this->skip('Readonly classes not available'))
+            ->and($mockedClassName = $generator->generate(__NAMESPACE__ . '\readonlyClass'))
+            ->and($fullClassName = 'mock\\' . __NAMESPACE__ . '\readonlyClass')
+            ->and($mock = new $fullClassName('test-id', 42))
+            ->then
+                // Can read properties
+                ->string($mock->id)->isEqualTo('test-id')
+                ->integer($mock->version)->isEqualTo(42)
+                
+                // Cannot modify properties (all properties in readonly class are readonly)
+                ->exception(function() use ($mock) {
+                    $mock->id = 'new-id';
+                })
+                    ->isInstanceOf(\Error::class)
+                    ->message->contains('Cannot modify readonly property')
+        ;
+    }
+
+    /** @php >= 8.2 */
+    public function testGetMockedClassCodeWithDnfTypes()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithDnfTypes') ?: $this->skip('DNF types not available'))
+            ->and($mockedClassCode = $generator->getMockedClassCode(__NAMESPACE__ . '\classWithDnfTypes'))
+            ->then
+                // Should contain DNF type in method signature: (A&B)|null or (A&B)|string
+                ->string($mockedClassCode)
+                    ->contains('public function processDnf(')
+                    ->match('/\(.*TestInterfaceA.*&.*TestInterfaceB.*\)/')
+        ;
+    }
+
+    /** @php >= 8.2 */
+    public function testGetMockedClassCodeWithStandaloneTypes()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithStandaloneTypes') ?: $this->skip('Standalone types not available'))
+            ->and($mockedClassCode = $generator->getMockedClassCode(__NAMESPACE__ . '\classWithStandaloneTypes'))
+            ->then
+                // Should contain standalone true/false/null types
+                ->string($mockedClassCode)
+                    ->contains('public function returnTrue(): true')
+                    ->contains('public function returnFalse(): false')
+                    ->contains('public function returnNull(): null')
+                    ->contains('public function acceptTrue(true $value)')
+        ;
+    }
+
+    /** @php >= 8.2 */
+    public function testMockedClassWithTraitConstants()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classUsingTraitWithConstants') ?: $this->skip('Trait constants not available'))
+            ->and($mockedClassName = $generator->generate(__NAMESPACE__ . '\classUsingTraitWithConstants'))
+            ->and($fullClassName = 'mock\\' . __NAMESPACE__ . '\classUsingTraitWithConstants')
+            ->and($mock = new $fullClassName())
+            ->then
+                // Trait constants should be accessible on the mock
+                ->string($fullClassName::TRAIT_CONSTANT)->isEqualTo('trait_value')
+                
+                // Method using trait constant should work
+                ->if($mock->getMockController()->getTraitConstant = 'mocked_value')
+                ->then
+                    ->string($mock->getTraitConstant())->isEqualTo('mocked_value')
+        ;
+    }
+
+    /** @php >= 8.3 */
+    public function testGetMockedClassCodeWithOverrideAttribute()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithOverrideAttribute') ?: $this->skip('Override attribute not available'))
+            ->and($mockedClassCode = $generator->getMockedClassCode(__NAMESPACE__ . '\classWithOverrideAttribute'))
+            ->then
+                // Should contain the overridden methods
+                ->string($mockedClassCode)
+                    ->contains('public function baseMethod()')
+                    ->contains('public function anotherMethod()')
+                    ->contains('public function newMethod()')
+        ;
+    }
+
+    /** @php >= 8.3 */
+    public function testMockingClassWithOverrideAttribute()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithOverrideAttribute') ?: $this->skip('Override attribute not available'))
+            ->and($mockedClassName = $generator->generate(__NAMESPACE__ . '\classWithOverrideAttribute'))
+            ->and($fullClassName = 'mock\\' . __NAMESPACE__ . '\classWithOverrideAttribute')
+            ->and($mock = new $fullClassName())
+            ->then
+                // Methods with Override attribute should be mockable
+                ->if($mock->getMockController()->baseMethod = 'mocked_base')
+                ->then
+                    ->string($mock->baseMethod())->isEqualTo('mocked_base')
+                
+                ->if($mock->getMockController()->anotherMethod = 999)
+                ->then
+                    ->integer($mock->anotherMethod())->isEqualTo(999)
+                
+                ->if($mock->getMockController()->newMethod = 'mocked_new')
+                ->then
+                    ->string($mock->newMethod())->isEqualTo('mocked_new')
+        ;
+    }
+
+    /** @php >= 8.3 */
+    public function testGetMockedClassCodeWithTypedConstants()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithTypedConstants') ?: $this->skip('Typed class constants not available'))
+            ->and($mockedClassCode = $generator->getMockedClassCode(__NAMESPACE__ . '\classWithTypedConstants'))
+            ->then
+                // Should contain method declarations
+                ->string($mockedClassCode)
+                    ->contains('public function getStatus()')
+                    ->contains('public function getMaxRetries()')
+        ;
+    }
+
+    /** @php >= 8.3 */
+    public function testMockingClassWithTypedConstants()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithTypedConstants') ?: $this->skip('Typed class constants not available'))
+            ->and($mockedClassName = $generator->generate(__NAMESPACE__ . '\classWithTypedConstants'))
+            ->and($fullClassName = 'mock\\' . __NAMESPACE__ . '\classWithTypedConstants')
+            ->and($mock = new $fullClassName())
+            ->then
+                // Typed constants should be accessible on the mock (inherited from parent)
+                ->string($fullClassName::STATUS_ACTIVE)->isEqualTo('active')
+                ->string($fullClassName::STATUS_INACTIVE)->isEqualTo('inactive')
+                ->integer($fullClassName::MAX_RETRIES)->isEqualTo(3)
+                ->float($fullClassName::PI_VALUE)->isEqualTo(3.14159)
+                ->boolean($fullClassName::DEBUG_MODE)->isFalse()
+                
+                // Methods using constants should work
+                ->if($mock->getMockController()->getStatus = 'mocked_status')
+                ->then
+                    ->string($mock->getStatus())->isEqualTo('mocked_status')
+                
+                ->if($mock->getMockController()->getMaxRetries = 10)
+                ->then
+                    ->integer($mock->getMaxRetries())->isEqualTo(10)
+        ;
+    }
+
+    /** @php >= 8.3 */
+    public function testGetMockedInterfaceCodeWithTypedConstants()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(interface_exists(__NAMESPACE__ . '\InterfaceWithTypedConstants') ?: $this->skip('Typed interface constants not available'))
+            ->and($mockedClassCode = $generator->getMockedClassCode(__NAMESPACE__ . '\InterfaceWithTypedConstants'))
+            ->then
+                // Should contain method declarations from interface
+                ->string($mockedClassCode)
+                    ->contains('public function getVersion()')
+        ;
+    }
+
+    /** @php >= 8.3 */
+    public function testMockingInterfaceWithTypedConstants()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(interface_exists(__NAMESPACE__ . '\InterfaceWithTypedConstants') ?: $this->skip('Typed interface constants not available'))
+            ->and($mockedClassName = $generator->generate(__NAMESPACE__ . '\InterfaceWithTypedConstants'))
+            ->and($fullClassName = 'mock\\' . __NAMESPACE__ . '\InterfaceWithTypedConstants')
+            ->and($mock = new $fullClassName())
+            ->then
+                // Typed constants should be accessible on the mock
+                ->string($fullClassName::VERSION)->isEqualTo('1.0.0')
+                ->integer($fullClassName::TIMEOUT)->isEqualTo(30)
+                
+                // Methods should be mockable
+                ->if($mock->getMockController()->getVersion = '2.0.0')
+                ->then
+                    ->string($mock->getVersion())->isEqualTo('2.0.0')
+        ;
+    }
+
+    /** @php >= 8.3 */
+    public function testMockingClassImplementingTypedConstants()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classImplementingTypedConstants') ?: $this->skip('Typed constants not available'))
+            ->and($mockedClassName = $generator->generate(__NAMESPACE__ . '\classImplementingTypedConstants'))
+            ->and($fullClassName = 'mock\\' . __NAMESPACE__ . '\classImplementingTypedConstants')
+            ->and($mock = new $fullClassName())
+            ->then
+                // Constants from interface should be accessible
+                ->string($fullClassName::VERSION)->isEqualTo('1.0.0')
+                ->integer($fullClassName::TIMEOUT)->isEqualTo(30)
+                
+                // Method should be mockable
+                ->if($mock->getMockController()->getVersion = '3.0.0')
+                ->then
+                    ->string($mock->getVersion())->isEqualTo('3.0.0')
+        ;
+    }
+
     protected function getMockControllerMethods()
     {
         return
@@ -4410,6 +4655,203 @@ if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
             public function getVersion(): int
             {
                 return $this->version;
+            }
+        }
+        
+        /**
+         * Test class with intersection types (PHP 8.1+)
+         */
+        interface TestInterfaceA {
+            public function methodA(): string;
+        }
+        
+        interface TestInterfaceB {
+            public function methodB(): int;
+        }
+        
+        class classWithIntersectionTypes
+        {
+            public function process(TestInterfaceA&TestInterfaceB $param): TestInterfaceA&TestInterfaceB
+            {
+                return $param;
+            }
+        }
+    ');
+}
+
+/**
+ * PHP 8.2+ Test Classes - Readonly Classes and DNF Types
+ * These classes are only used for testing when PHP 8.2+ is available
+ */
+if (version_compare(PHP_VERSION, '8.2.0', '>=')) {
+    eval('
+        namespace atoum\atoum\tests\units\mock;
+        
+        /**
+         * Test readonly class (PHP 8.2+)
+         */
+        readonly class readonlyClass
+        {
+            public function __construct(
+                public string $id,
+                public int $version
+            ) {}
+            
+            public function getId(): string
+            {
+                return $this->id;
+            }
+        }
+        
+        /**
+         * Test class with DNF types (Disjunctive Normal Form) (PHP 8.2+)
+         * DNF types combine union and intersection types: (A&B)|C
+         */
+        class classWithDnfTypes
+        {
+            public function processDnf((TestInterfaceA&TestInterfaceB)|null $param): (TestInterfaceA&TestInterfaceB)|string
+            {
+                if ($param === null) {
+                    return "null parameter";
+                }
+                return $param;
+            }
+        }
+        
+        /**
+         * Test class with standalone true/false/null types (PHP 8.2+)
+         */
+        class classWithStandaloneTypes
+        {
+            public function returnTrue(): true
+            {
+                return true;
+            }
+            
+            public function returnFalse(): false
+            {
+                return false;
+            }
+            
+            public function returnNull(): null
+            {
+                return null;
+            }
+            
+            public function acceptTrue(true $value): void
+            {
+            }
+        }
+        
+        /**
+         * Test trait with constants (PHP 8.2+)
+         */
+        trait TraitWithConstants
+        {
+            public const TRAIT_CONSTANT = "trait_value";
+            private const PRIVATE_CONSTANT = 42;
+        }
+        
+        class classUsingTraitWithConstants
+        {
+            use TraitWithConstants;
+            
+            public function getTraitConstant(): string
+            {
+                return self::TRAIT_CONSTANT;
+            }
+        }
+    ');
+}
+
+/**
+ * PHP 8.3+ Test Classes - Override Attribute and Typed Class Constants
+ * These classes are only used for testing when PHP 8.3+ is available
+ */
+if (version_compare(PHP_VERSION, '8.3.0', '>=')) {
+    eval('
+        namespace atoum\atoum\tests\units\mock;
+        
+        /**
+         * Base class for testing Override attribute
+         */
+        class BaseClassForOverride
+        {
+            public function baseMethod(): string
+            {
+                return "base";
+            }
+            
+            public function anotherMethod(): int
+            {
+                return 42;
+            }
+        }
+        
+        /**
+         * Test class with Override attribute (PHP 8.3+)
+         */
+        class classWithOverrideAttribute extends BaseClassForOverride
+        {
+            #[\Override]
+            public function baseMethod(): string
+            {
+                return "overridden";
+            }
+            
+            #[\Override]
+            public function anotherMethod(): int
+            {
+                return 100;
+            }
+            
+            public function newMethod(): string
+            {
+                return "new";
+            }
+        }
+        
+        /**
+         * Test class with typed class constants (PHP 8.3+)
+         */
+        class classWithTypedConstants
+        {
+            public const string STATUS_ACTIVE = "active";
+            public const string STATUS_INACTIVE = "inactive";
+            public const int MAX_RETRIES = 3;
+            public const float PI_VALUE = 3.14159;
+            public const bool DEBUG_MODE = false;
+            
+            public function getStatus(): string
+            {
+                return self::STATUS_ACTIVE;
+            }
+            
+            public function getMaxRetries(): int
+            {
+                return self::MAX_RETRIES;
+            }
+        }
+        
+        /**
+         * Test interface with typed constants (PHP 8.3+)
+         */
+        interface InterfaceWithTypedConstants
+        {
+            public const string VERSION = "1.0.0";
+            public const int TIMEOUT = 30;
+            
+            public function getVersion(): string;
+        }
+        
+        /**
+         * Test class implementing interface with typed constants
+         */
+        class classImplementingTypedConstants implements InterfaceWithTypedConstants
+        {
+            public function getVersion(): string
+            {
+                return self::VERSION;
             }
         }
     ');
