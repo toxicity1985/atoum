@@ -3520,6 +3520,46 @@ class generator extends atoum\test
         ;
     }
 
+    /** @php >= 8.1 */
+    public function testGetMockedClassCodeWithReadonlyProperties()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithReadonlyProperties') ?: $this->skip('Readonly properties not available'))
+            ->then
+                ->string($code = $generator->getMockedClassCode(__NAMESPACE__ . '\classWithReadonlyProperties'))
+                    ->contains('namespace mock\\' . __NAMESPACE__)
+                    ->contains('class classWithReadonlyProperties extends')
+                    
+                    // Should contain readonly modifier for properties
+                    ->contains('public readonly string $id;')
+                    ->contains('public readonly int $version;')
+        ;
+    }
+
+    /** @php >= 8.1 */
+    public function testMockedClassWithReadonlyPropertiesPreservesImmutability()
+    {
+        $this
+            ->if($generator = new testedClass())
+            ->and(class_exists(__NAMESPACE__ . '\classWithReadonlyProperties') ?: $this->skip('Readonly properties not available'))
+            ->and($mockedClassName = $generator->generate(__NAMESPACE__ . '\classWithReadonlyProperties'))
+            ->and($fullClassName = 'mock\\' . __NAMESPACE__ . '\classWithReadonlyProperties')
+            ->and($mock = new $fullClassName('test-id-123', 1))
+            ->then
+                // Can read readonly property
+                ->string($mock->id)->isEqualTo('test-id-123')
+                ->integer($mock->version)->isEqualTo(1)
+                
+                // Cannot modify readonly property (should throw Error)
+                ->exception(function() use ($mock) {
+                    $mock->id = 'new-id';
+                })
+                    ->isInstanceOf(\Error::class)
+                    ->message->contains('Cannot modify readonly property')
+        ;
+    }
+
     protected function getMockControllerMethods()
     {
         return
@@ -4339,6 +4379,37 @@ if (version_compare(PHP_VERSION, '8.0.0', '>=')) {
             public function getEmail(): string
             {
                 return $this->email;
+            }
+        }
+    ');
+}
+
+/**
+ * PHP 8.1+ Test Classes - Readonly Properties
+ * These classes are only used for testing when PHP 8.1+ is available
+ */
+if (version_compare(PHP_VERSION, '8.1.0', '>=')) {
+    eval('
+        namespace atoum\atoum\tests\units\mock;
+        
+        /**
+         * Test class with readonly promoted properties
+         */
+        class classWithReadonlyProperties
+        {
+            public function __construct(
+                public readonly string $id,
+                public readonly int $version
+            ) {}
+            
+            public function getId(): string
+            {
+                return $this->id;
+            }
+            
+            public function getVersion(): int
+            {
+                return $this->version;
             }
         }
     ');

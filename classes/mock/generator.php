@@ -1085,6 +1085,12 @@ class generator
             $visibility = 'private';
         }
         
+        // Check if readonly (PHP 8.1+)
+        $readonly = '';
+        if (method_exists($property, 'isReadOnly') && $property->isReadOnly()) {
+            $readonly = 'readonly ';
+        }
+        
         // Get property type
         $typeHint = '';
         if ($property->hasType()) {
@@ -1094,7 +1100,7 @@ class generator
             }
         }
         
-        return "\t" . $visibility . ' ' . $typeHint . '$' . $propertyName . ';' . PHP_EOL;
+        return "\t" . $visibility . ' ' . $readonly . $typeHint . '$' . $propertyName . ';' . PHP_EOL;
     }
 
     /**
