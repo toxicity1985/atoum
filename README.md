@@ -138,14 +138,14 @@ $runner->setTestGenerator($testGenerator);
 
 ## Prerequisites to use *atoum*
 
-*atoum* absolutely requires *PHP `>= 5.6.0`* or later to work.
+*atoum* absolutely requires *PHP `>= 8.0.0`* or later to work.
 On UNIX, in order to check whether you have the right PHP version, you just need to run the following command in your terminal:
 
 ```sh
-$ php -v | grep -oE 'php 5\.3\.(?:[3-9]|[1-9][0-9])|5\.[4-6]\.[0-9]+|[5-8]\.[0-9]+\.[0-9]+'
+$ php -v
 ```
 
-If `PHP 5.6.x` or equivalent gets displayed, then you have the right PHP version installed.
+If `PHP 8.0.x` or higher gets displayed, then you have the right PHP version installed.
 Should you want to use *atoum* using its PHAR archive, you also need [PHP](http://www.php.net) to be able to access the `phar` module, which is normally available by default.
 On UNIX, in order to check whether you have this module or not, you just need to run the following command in your terminal:
 
