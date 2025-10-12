@@ -4,10 +4,10 @@ namespace atoum\atoum\tests\units\php84\fixtures;
 
 /**
  * Examples of PHP 8.4 #[\Deprecated] attribute
- * 
+ *
  * The Deprecated attribute allows marking code as deprecated natively
  * instead of relying on @deprecated docblock comments.
- * 
+ *
  * @requires PHP >= 8.4
  */
 
@@ -146,7 +146,8 @@ class Payment
     public function __construct(
         public readonly float $amount,
         public readonly string $currency
-    ) {}
+    ) {
+    }
 }
 
 /**
@@ -220,4 +221,3 @@ class DataFormatter
         return $this->formatDataNew($data);
     }
 }
-

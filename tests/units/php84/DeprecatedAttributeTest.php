@@ -303,4 +303,3 @@ class DeprecatedAttributeTest extends atoum
         }
     }
 }
-

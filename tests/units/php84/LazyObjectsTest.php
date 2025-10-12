@@ -65,7 +65,7 @@ class LazyObjectsTest extends atoum
             ->then
                 ->boolean(LazyObjectFactory::isLazy($lazy))->isTrue()
 
-            ->when(function() use ($lazy) {
+            ->when(function () use ($lazy) {
                 LazyObjectFactory::initialize($lazy);
             })
 
@@ -97,8 +97,7 @@ class LazyObjectsTest extends atoum
     {
         $this
             ->given($container = new ServiceContainer())
-            ->and($container->register('expensive', fn() => new ExpensiveService()))
-
+            ->and($container->register('expensive', fn () => new ExpensiveService()))
             ->then
                 // Service not initialized yet
                 ->boolean($container->isServiceInitialized('expensive'))
@@ -205,7 +204,7 @@ class LazyObjectsTest extends atoum
 
             // Creating 10 lazy objects should be fast
             ->and($lazyObjects = array_map(
-                fn() => LazyObjectFactory::createLazyGhost(),
+                fn () => LazyObjectFactory::createLazyGhost(),
                 range(1, 10)
             ))
 
@@ -238,4 +237,3 @@ class LazyObjectsTest extends atoum
         ;
     }
 }
-

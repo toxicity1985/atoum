@@ -3298,16 +3298,16 @@ class generator extends atoum\test
                     ->contains('namespace mock\\' . __NAMESPACE__)
                     ->contains('class classWithPropertyHooks extends')
                     ->contains('implements \atoum\atoum\mock\aggregator')
-                    
+
                     // Should contain property hooks
                     ->contains('$validated')
                     ->contains('get {')
                     ->contains('set(string $value) {')  // Type must match property type
-                    
+
                     // Should route through mock controller
                     ->contains('$this->getMockController()->invoke(\'__get_validated\'')
                     ->contains('$this->getMockController()->invoke(\'__set_validated\'')
-                    
+
                     // Should contain regular methods
                     ->contains('public function getValue()')
                     ->contains('public static function getMockedMethods()')
@@ -3326,17 +3326,17 @@ class generator extends atoum\test
             ->then
                 // Disable method checking for property hooks
                 ->if($mock->getMockController()->disableMethodChecking())
-                
+
                 // Test get hook
                 ->and($mock->getMockController()->__get_validated = 'mocked value')
                 ->then
                     ->string($mock->validated)->isEqualTo('mocked value')
                     ->mock($mock)
                         ->call('__get_validated')->once()
-                
+
                 // Test set hook
                 ->if($mock->getMockController()->__set_validated = null)
-                ->when(function() use ($mock) { $mock->validated = 'test'; })
+                ->when(function () use ($mock) { $mock->validated = 'test'; })
                 ->then
                     ->mock($mock)
                         ->call('__set_validated')->withArguments('test')->once()
@@ -3354,11 +3354,11 @@ class generator extends atoum\test
                     ->contains('namespace mock\\' . __NAMESPACE__)
                     ->contains('class classWithAsymmetricVisibility extends')
                     ->contains('implements \atoum\atoum\mock\aggregator')
-                    
+
                     // Should contain asymmetric visibility
                     ->contains('public private(set)')
                     ->contains('$balance')
-                    
+
                     // Should contain regular methods
                     ->contains('public function deposit(')
                     ->contains('public static function getMockedMethods()')
@@ -3376,15 +3376,15 @@ class generator extends atoum\test
             ->then
                 // Can read the property
                 ->float($mock->balance)->isEqualTo(0.0)
-                
+
                 // Cannot write directly (PHP 8.4 will throw error)
-                ->exception(function() use ($mock) {
+                ->exception(function () use ($mock) {
                     $mock->balance = 100.0;
                 })
                     ->isInstanceOf(\Error::class)
-                
+
                 // But can modify through methods
-                ->when(function() use ($mock) {
+                ->when(function () use ($mock) {
                     $mock->deposit(50.0);
                 })
                 ->then
@@ -3403,7 +3403,7 @@ class generator extends atoum\test
                     ->contains('namespace mock\\' . __NAMESPACE__)
                     ->contains('class classWithDeprecatedMethods extends')
                     ->contains('implements \atoum\atoum\mock\aggregator')
-                    
+
                     // Should contain both deprecated and non-deprecated methods
                     ->contains('public function oldMethod(')
                     ->contains('public function newMethod(')
@@ -3427,7 +3427,7 @@ class generator extends atoum\test
                     ->string($mock->oldMethod())->isEqualTo('mocked old')
                     ->mock($mock)
                         ->call('oldMethod')->once()
-                
+
                 // Non-deprecated method works as usual
                 ->if($mock->getMockController()->newMethod = 'mocked new')
                 ->then
@@ -3450,13 +3450,13 @@ class generator extends atoum\test
                 // Can create mock of class with deprecated constants
                 ->object($mock)
                     ->isInstanceOf(__NAMESPACE__ . '\classWithDeprecatedConstants')
-                
+
                 // Non-deprecated constants are accessible without warnings
                 ->string($fullClassName::NEW_CONSTANT)->isEqualTo('new_value')
-                
+
                 // Note: We don't test OLD_CONSTANT directly to avoid E_USER_DEPRECATED warning
                 // The deprecated constant exists and is inherited, but accessing it triggers a deprecation notice
-                
+
                 // Methods can be mocked
                 ->if($mock->getMockController()->getOldConstant = 'mocked')
                 ->then
@@ -3475,7 +3475,7 @@ class generator extends atoum\test
                     ->contains('namespace mock\\' . __NAMESPACE__)
                     ->contains('class classWithPromotedProperties extends')
                     ->contains('implements \atoum\atoum\mock\aggregator')
-                    
+
                     // Should contain promoted properties declarations
                     ->contains('public string $name;')
                     ->contains('private int $age;')
@@ -3495,12 +3495,12 @@ class generator extends atoum\test
             ->then
                 // Can access public property
                 ->string($mock->name)->isEqualTo('Alice')
-                
+
                 // Can modify public property
-                ->when(function() use ($mock) { $mock->name = 'Bob'; })
+                ->when(function () use ($mock) { $mock->name = 'Bob'; })
                 ->then
                     ->string($mock->name)->isEqualTo('Bob')
-                
+
                 // Can call method that uses promoted properties
                 ->string($mock->getName())->isEqualTo('Bob')
         ;
@@ -3530,7 +3530,7 @@ class generator extends atoum\test
                 ->string($code = $generator->getMockedClassCode(__NAMESPACE__ . '\classWithReadonlyProperties'))
                     ->contains('namespace mock\\' . __NAMESPACE__)
                     ->contains('class classWithReadonlyProperties extends')
-                    
+
                     // Should contain readonly modifier for properties
                     ->contains('public readonly string $id;')
                     ->contains('public readonly int $version;')
@@ -3550,9 +3550,9 @@ class generator extends atoum\test
                 // Can read readonly property
                 ->string($mock->id)->isEqualTo('test-id-123')
                 ->integer($mock->version)->isEqualTo(1)
-                
+
                 // Cannot modify readonly property (should throw Error)
-                ->exception(function() use ($mock) {
+                ->exception(function () use ($mock) {
                     $mock->id = 'new-id';
                 })
                     ->isInstanceOf(\Error::class)
@@ -3603,9 +3603,9 @@ class generator extends atoum\test
                 // Can read properties
                 ->string($mock->id)->isEqualTo('test-id')
                 ->integer($mock->version)->isEqualTo(42)
-                
+
                 // Cannot modify properties (all properties in readonly class are readonly)
-                ->exception(function() use ($mock) {
+                ->exception(function () use ($mock) {
                     $mock->id = 'new-id';
                 })
                     ->isInstanceOf(\Error::class)
@@ -3657,7 +3657,7 @@ class generator extends atoum\test
             ->then
                 // Trait constants should be accessible on the mock
                 ->string($fullClassName::TRAIT_CONSTANT)->isEqualTo('trait_value')
-                
+
                 // Method using trait constant should work
                 ->if($mock->getMockController()->getTraitConstant = 'mocked_value')
                 ->then
@@ -3695,11 +3695,11 @@ class generator extends atoum\test
                 ->if($mock->getMockController()->baseMethod = 'mocked_base')
                 ->then
                     ->string($mock->baseMethod())->isEqualTo('mocked_base')
-                
+
                 ->if($mock->getMockController()->anotherMethod = 999)
                 ->then
                     ->integer($mock->anotherMethod())->isEqualTo(999)
-                
+
                 ->if($mock->getMockController()->newMethod = 'mocked_new')
                 ->then
                     ->string($mock->newMethod())->isEqualTo('mocked_new')
@@ -3737,12 +3737,12 @@ class generator extends atoum\test
                 ->integer($fullClassName::MAX_RETRIES)->isEqualTo(3)
                 ->float($fullClassName::PI_VALUE)->isEqualTo(3.14159)
                 ->boolean($fullClassName::DEBUG_MODE)->isFalse()
-                
+
                 // Methods using constants should work
                 ->if($mock->getMockController()->getStatus = 'mocked_status')
                 ->then
                     ->string($mock->getStatus())->isEqualTo('mocked_status')
-                
+
                 ->if($mock->getMockController()->getMaxRetries = 10)
                 ->then
                     ->integer($mock->getMaxRetries())->isEqualTo(10)
@@ -3776,7 +3776,7 @@ class generator extends atoum\test
                 // Typed constants should be accessible on the mock
                 ->string($fullClassName::VERSION)->isEqualTo('1.0.0')
                 ->integer($fullClassName::TIMEOUT)->isEqualTo(30)
-                
+
                 // Methods should be mockable
                 ->if($mock->getMockController()->getVersion = '2.0.0')
                 ->then
@@ -3797,7 +3797,7 @@ class generator extends atoum\test
                 // Constants from interface should be accessible
                 ->string($fullClassName::VERSION)->isEqualTo('1.0.0')
                 ->integer($fullClassName::TIMEOUT)->isEqualTo(30)
-                
+
                 // Method should be mockable
                 ->if($mock->getMockController()->getVersion = '3.0.0')
                 ->then
@@ -4400,7 +4400,7 @@ class classWithScalarTypeHints
 /**
  * Test class with PHP 8.4 property hooks
  * This class is only used for testing when PHP 8.4+ is available
- * 
+ *
  * Note: This syntax will cause parse errors on PHP < 8.4
  * To handle this, the class should be conditionally loaded
  */

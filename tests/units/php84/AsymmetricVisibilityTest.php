@@ -9,7 +9,7 @@ use atoum\atoum\tests\units\php84\fixtures\User;
 
 /**
  * Tests demonstrating asymmetric visibility with atoum
- * 
+ *
  * @requires PHP >= 8.4
  */
 class AsymmetricVisibilityTest extends atoum
@@ -25,9 +25,9 @@ class AsymmetricVisibilityTest extends atoum
                 // Can read balance
                 ->float($account->balance)->isEqualTo(0.0)
                 ->string($account->accountId)->isEqualTo('ACC123')
-                
+
                 // Cannot write directly (PHP 8.4 enforces this)
-                ->exception(function() use ($account) {
+                ->exception(function () use ($account) {
                     $account->balance = 1000.0;
                 })
                     ->isInstanceOf(\Error::class)
@@ -43,7 +43,7 @@ class AsymmetricVisibilityTest extends atoum
             ->then
                 ->float($account->balance)->isEqualTo(100.0)
                 ->integer($account->getTransactionCount())->isEqualTo(1)
-            
+
             ->when($account->deposit(50.0))
             ->then
                 ->float($account->balance)->isEqualTo(150.0)
@@ -68,7 +68,7 @@ class AsymmetricVisibilityTest extends atoum
         $this
             ->given($account = new BankAccount('ACC999'))
             ->and($account->deposit(50.0))
-            ->exception(function() use ($account) {
+            ->exception(function () use ($account) {
                 $account->withdraw(100.0);
             })
                 ->isInstanceOf(\ValueError::class)
@@ -85,13 +85,13 @@ class AsymmetricVisibilityTest extends atoum
                 // Can read transactions
                 ->array($account->transactions)
                     ->hasSize(1)
-                    ->child[0](function($transaction) {
+                    ->child[0](function ($transaction) {
                         $this->string($transaction['type'])->isEqualTo('deposit');
                         $this->float($transaction['amount'])->isEqualTo(100.0);
                     })
-                
+
                 // Cannot modify transactions directly
-                ->exception(function() use ($account) {
+                ->exception(function () use ($account) {
                     $account->transactions = [];
                 })
                     ->isInstanceOf(\Error::class)
@@ -108,9 +108,9 @@ class AsymmetricVisibilityTest extends atoum
             ->then
                 ->integer($counter->value)->isEqualTo(0)
                 ->integer($counter->maxValue)->isEqualTo(0)
-                
+
                 // Cannot set value directly
-                ->exception(function() use ($counter) {
+                ->exception(function () use ($counter) {
                     $counter->value = 10;
                 })
                     ->isInstanceOf(\Error::class)
@@ -125,12 +125,12 @@ class AsymmetricVisibilityTest extends atoum
             ->then
                 ->integer($counter->value)->isEqualTo(5)
                 ->integer($counter->maxValue)->isEqualTo(5)
-            
+
             ->when($counter->increment(3))
             ->then
                 ->integer($counter->value)->isEqualTo(8)
                 ->integer($counter->maxValue)->isEqualTo(8)
-            
+
             // Reset to 0 but maxValue stays
             ->when($counter->reset())
             ->then
@@ -155,9 +155,9 @@ class AsymmetricVisibilityTest extends atoum
                 // Mock maintains asymmetric visibility
                 ->float($mock->balance)->isEqualTo(0.0)
                 ->string($mock->accountId)->isEqualTo('MOCK123')
-                
+
                 // Can mock methods
-                ->when($this->calling($mock)->deposit = function($amount) {
+                ->when($this->calling($mock)->deposit = function ($amount) {
                     $this->balance = $amount * 2; // Double the deposit
                 })
                 ->and($mock->deposit(50))
@@ -180,12 +180,12 @@ class AsymmetricVisibilityTest extends atoum
             ->then
                 ->mock($mock)
                     ->call('increment')->withArguments(10)->once()
-                
+
                 // Properties still respect asymmetric visibility
                 ->integer($mock->value)->isEqualTo(0) // Not modified (mocked)
-                
+
                 // Cannot set directly even on mock
-                ->exception(function() use ($mock) {
+                ->exception(function () use ($mock) {
                     $mock->value = 100;
                 })
                     ->isInstanceOf(\Error::class)
@@ -203,15 +203,15 @@ class AsymmetricVisibilityTest extends atoum
                 ->integer($user->id)->isEqualTo(1)
                 ->string($user->name)->isEqualTo('John Doe')
                 ->object($user->createdAt)->isInstanceOf(\DateTimeImmutable::class)
-                
+
                 // ID is read-only
-                ->exception(function() use ($user) {
+                ->exception(function () use ($user) {
                     $user->id = 999;
                 })
                     ->isInstanceOf(\Error::class)
-                
+
                 // createdAt is read-only
-                ->exception(function() use ($user) {
+                ->exception(function () use ($user) {
                     $user->createdAt = new \DateTimeImmutable();
                 })
                     ->isInstanceOf(\Error::class)
@@ -226,8 +226,8 @@ class AsymmetricVisibilityTest extends atoum
             ->then
                 // Email updated successfully
                 ->variable($user->getEmail())->isNull() // Protected method not accessible
-            
-            ->exception(function() use ($user) {
+
+            ->exception(function () use ($user) {
                 $user->updateEmail('invalid-email');
             })
                 ->isInstanceOf(\ValueError::class)
@@ -235,4 +235,3 @@ class AsymmetricVisibilityTest extends atoum
         ;
     }
 }
-

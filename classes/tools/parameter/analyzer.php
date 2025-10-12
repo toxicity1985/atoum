@@ -22,14 +22,14 @@ class analyzer
 
         // Format the type into a string representation
         $typeString = $this->formatReflectionType($parameterType, $parameter->getDeclaringClass());
-        
+
         // Handle nullable for non-union/intersection types
         $canBeNull = $force_nullable || $parameter->allowsNull() || ($parameter->isOptional() && !$parameter->isDefaultValueAvailable());
-        $isComplexType = $parameterType instanceof \ReflectionUnionType 
+        $isComplexType = $parameterType instanceof \ReflectionUnionType
             || (class_exists(\ReflectionIntersectionType::class) && $parameterType instanceof \ReflectionIntersectionType);
-        
+
         $prefix = $canBeNull && !$isComplexType && !str_contains($typeString, '|') ? '?' : '';
-        
+
         // Add null to union if forced nullable
         if ($parameterType instanceof \ReflectionUnionType && $force_nullable && !str_contains($typeString, 'null')) {
             $typeString .= '|null';
@@ -37,7 +37,7 @@ class analyzer
 
         return $prefix . $typeString;
     }
-    
+
     /**
      * Format a ReflectionType into a string representation
      * Handles: NamedType, UnionType, IntersectionType (PHP 8.1+), and DNF types (PHP 8.2+)
@@ -51,7 +51,7 @@ class analyzer
         // PHP 8.0+: Named types
         if ($type instanceof \reflectionNamedType) {
             $typeName = $type->getName();
-            
+
             // Handle special keyword types: 'self', 'parent', 'static'
             if ($typeName === 'static') {
                 // 'static' is always kept as-is (late static binding keyword)
@@ -68,16 +68,16 @@ class analyzer
                     }
                 }
             }
-            
+
             $prefix = '';
             // Only add backslash for non-builtin named types
             if (!$type->isBuiltin()) {
                 $prefix = '\\';
             }
-            
+
             return $prefix . $typeName;
         }
-        
+
         // PHP 8.0+: Union types
         if ($type instanceof \ReflectionUnionType) {
             $types = array_map(
@@ -88,7 +88,7 @@ class analyzer
             );
             return implode('|', $types);
         }
-        
+
         // PHP 8.1+: Intersection types
         if (class_exists(\ReflectionIntersectionType::class) && $type instanceof \ReflectionIntersectionType) {
             $types = array_map(
@@ -104,7 +104,7 @@ class analyzer
             );
             return implode('&', $types);
         }
-        
+
         // Fallback for unknown types
         return (string) $type;
     }

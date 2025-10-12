@@ -493,22 +493,22 @@ class generator
     protected function generateClassCode(\reflectionClass $class, $mockNamespace, $mockClass)
     {
         $propertiesCode = '';
-        
+
         // PHP 8.0+ : Generate promoted properties from constructor
         if (method_exists(\ReflectionParameter::class, 'isPromoted')) {
             $propertiesCode .= $this->generatePromotedProperties($class);
         }
-        
+
         // PHP 8.4+ : Generate property hooks
         if (method_exists(\ReflectionProperty::class, 'getHooks')) {
             $propertiesCode .= $this->generatePropertiesWithHooks($class);
         }
-        
+
         // PHP 8.4+ : Generate asymmetric visibility
         if (method_exists(\ReflectionProperty::class, 'isPublicSet')) {
             $propertiesCode .= $this->generatePropertiesWithAsymmetricVisibility($class);
         }
-        
+
         // PHP 8.2+ : Check if class is readonly
         $classModifiers = 'final ';
         try {
@@ -518,7 +518,7 @@ class generator
         } catch (\Throwable $e) {
             // Ignore errors when checking for readonly class (e.g., mocked ReflectionClass)
         }
-        
+
         return ($this->useStrictTypes ? 'declare(strict_types=1);' . PHP_EOL : '') .
             'namespace ' . ltrim($mockNamespace, '\\') . ' {' . PHP_EOL .
             $classModifiers . 'class ' . $mockClass . ' extends \\' . $class->getName() . ' implements \\' . __NAMESPACE__ . '\\aggregator' . PHP_EOL .
@@ -696,26 +696,26 @@ class generator
         $returnType = $this->getReflectionType($method);
         $returnTypeName = $this->getReflectionTypeName($returnType);
         $isNullable = $returnType->allowsNull() === true;
-        
+
         // Handle special cases: self, parent, static
         if ($returnType instanceof \reflectionNamedType) {
             switch ($returnTypeName) {
                 case 'self':
                     return ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getName();
-                
+
                 case 'parent':
                     return ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getParentClass()->getName();
-                
+
                 case 'static':
                     return ': ' . ($isNullable ? '?' : '') . $returnTypeName;
-                
+
                 case 'mixed':
                 case 'void':
                 case 'never':
                     // These types cannot be marked as nullable
                     return ': ' . $returnTypeName;
-                
-                // PHP 8.2+: Standalone null, true, false types
+
+                    // PHP 8.2+: Standalone null, true, false types
                 case 'null':
                 case 'true':
                 case 'false':
@@ -723,37 +723,37 @@ class generator
                     return ': ' . $returnTypeName;
             }
         }
-        
+
         // For complex types (Union, Intersection, DNF), use the generic formatter
-        if ($returnType instanceof \ReflectionUnionType 
+        if ($returnType instanceof \ReflectionUnionType
             || (class_exists(\ReflectionIntersectionType::class) && $returnType instanceof \ReflectionIntersectionType)) {
             $formattedType = $this->formatReflectionType($returnType, $method);
             return $formattedType !== '' ? ': ' . $formattedType : '';
         }
-        
+
         // Fallback for simple types (including mocked types and tentative return types)
         // Handle special keywords
         switch ($returnTypeName) {
             case 'self':
                 return ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getName();
-            
+
             case 'parent':
                 return ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getParentClass()->getName();
-            
+
             case 'static':
             case 'mixed':
             case 'null':
                 return ': ' . ($isNullable && !in_array($returnTypeName, ['mixed', 'null']) ? '?' : '') . $returnTypeName;
         }
-        
+
         // Check if it's a builtin type (either directly or from mocked ReflectionType)
-        $isBuiltinType = ($returnType instanceof \reflectionNamedType && $returnType->isBuiltin()) 
+        $isBuiltinType = ($returnType instanceof \reflectionNamedType && $returnType->isBuiltin())
                       || ($returnType->isBuiltin());
-        
+
         if ($isBuiltinType) {
             return ': ' . ($isNullable ? '?' : '') . $returnTypeName;
         }
-        
+
         // For non-builtin types (classes), add backslash
         return ': ' . ($isNullable ? '?' : '') . '\\' . $returnTypeName;
     }
@@ -1069,12 +1069,12 @@ class generator
     protected function generatePromotedProperties(\ReflectionClass $class): string
     {
         $propertiesCode = '';
-        
+
         $constructor = $class->getConstructor();
         if ($constructor === null) {
             return '';
         }
-        
+
         foreach ($constructor->getParameters() as $parameter) {
             try {
                 if (method_exists($parameter, 'isPromoted') && $parameter->isPromoted()) {
@@ -1085,34 +1085,34 @@ class generator
                 continue;
             }
         }
-        
+
         return $propertiesCode;
     }
-    
+
     /**
      * Generate code for a single promoted property
      */
     protected function generatePromotedProperty(\ReflectionParameter $parameter): string
     {
         $propertyName = $parameter->getName();
-        
+
         // Get the property from the class to determine visibility
         $reflector = $parameter->getDeclaringFunction()->getDeclaringClass();
         $property = $reflector->getProperty($propertyName);
-        
+
         $visibility = 'public';
         if ($property->isProtected()) {
             $visibility = 'protected';
         } elseif ($property->isPrivate()) {
             $visibility = 'private';
         }
-        
+
         // Check if readonly (PHP 8.1+)
         $readonly = '';
         if (method_exists($property, 'isReadOnly') && $property->isReadOnly()) {
             $readonly = 'readonly ';
         }
-        
+
         // Get property type
         $typeHint = '';
         if ($property->hasType()) {
@@ -1121,7 +1121,7 @@ class generator
                 $typeHint .= ' ';
             }
         }
-        
+
         return "\t" . $visibility . ' ' . $readonly . $typeHint . '$' . $propertyName . ';' . PHP_EOL;
     }
 
@@ -1135,7 +1135,7 @@ class generator
             if (!method_exists($property, 'getHooks')) {
                 return false;
             }
-            
+
             $hooks = $property->getHooks();
             return !empty($hooks);
         } catch (\Throwable $e) {
@@ -1149,7 +1149,7 @@ class generator
     protected function generatePropertiesWithHooks(\ReflectionClass $class): string
     {
         $propertiesCode = '';
-        
+
         try {
             foreach ($class->getProperties() as $property) {
                 if ($this->hasPropertyHooks($property)) {
@@ -1170,7 +1170,7 @@ class generator
     {
         $propertyName = $property->getName();
         $visibility = $this->getPropertyVisibility($property);
-        
+
         // Get property type if available
         $typeHint = $this->getPropertyType($property);
         if ($typeHint !== '') {
@@ -1178,26 +1178,26 @@ class generator
         }
 
         $code = "\t" . $visibility . ' ' . $typeHint . '$' . $propertyName . ' {' . PHP_EOL;
-        
+
         // Generate hooks
         $hooks = $property->getHooks();
-        
+
         // Note: hooks array uses string keys 'get' and 'set', not constants
         if (isset($hooks['get'])) {
             $code .= "\t\t" . 'get {' . PHP_EOL;
             $code .= "\t\t\t" . 'return $this->getMockController()->invoke(\'__get_' . $propertyName . '\', []);' . PHP_EOL;
             $code .= "\t\t" . '}' . PHP_EOL;
         }
-        
+
         if (isset($hooks['set'])) {
             // For set hook, parameter type must match property type
             $code .= "\t\t" . 'set(' . $typeHint . '$value) {' . PHP_EOL;
             $code .= "\t\t\t" . '$this->getMockController()->invoke(\'__set_' . $propertyName . '\', [$value]);' . PHP_EOL;
             $code .= "\t\t" . '}' . PHP_EOL;
         }
-        
+
         $code .= "\t" . '}' . PHP_EOL . PHP_EOL;
-        
+
         return $code;
     }
 
@@ -1212,10 +1212,10 @@ class generator
         }
 
         $type = $property->getType();
-        
+
         return $this->formatReflectionType($type);
     }
-    
+
     /**
      * Format a ReflectionType into a string representation
      * Handles: NamedType, UnionType, IntersectionType (PHP 8.1+), and DNF types (PHP 8.2+)
@@ -1245,7 +1245,7 @@ class generator
             $nullable = $type->allowsNull() && $typeName !== 'mixed' && $typeName !== 'null' ? '?' : '';
             return $nullable . (!$type->isBuiltin() ? '\\' : '') . $typeName;
         }
-        
+
         // PHP 8.0+: Union types
         if ($type instanceof \ReflectionUnionType) {
             $types = array_map(
@@ -1256,7 +1256,7 @@ class generator
             );
             return implode('|', $types);
         }
-        
+
         // PHP 8.1+: Intersection types
         if (class_exists(\ReflectionIntersectionType::class) && $type instanceof \ReflectionIntersectionType) {
             $types = array_map(
@@ -1273,7 +1273,7 @@ class generator
             );
             return implode('&', $types);
         }
-        
+
         return '';
     }
 
@@ -1320,14 +1320,14 @@ class generator
      */
     protected function getPropertyVisibility(\ReflectionProperty $property): string
     {
-        $readVisibility = $property->isPublic() ? 'public' : 
+        $readVisibility = $property->isPublic() ? 'public' :
                          ($property->isProtected() ? 'protected' : 'private');
 
         // Check for asymmetric visibility (PHP 8.4+)
         if ($this->hasAsymmetricVisibility($property)) {
             $writeVisibility = $property->isPublicSet() ? 'public' :
                               ($property->isProtectedSet() ? 'protected' : 'private');
-            
+
             return $readVisibility . ' ' . $writeVisibility . '(set)';
         }
 
@@ -1340,7 +1340,7 @@ class generator
     protected function generatePropertiesWithAsymmetricVisibility(\ReflectionClass $class): string
     {
         $propertiesCode = '';
-        
+
         try {
             foreach ($class->getProperties() as $property) {
                 if ($this->hasAsymmetricVisibility($property) && !$this->hasPropertyHooks($property)) {
@@ -1361,7 +1361,7 @@ class generator
     {
         $propertyName = $property->getName();
         $visibility = $this->getPropertyVisibility($property);
-        
+
         // Get property type if available
         $typeHint = $this->getPropertyType($property);
         if ($typeHint !== '') {
@@ -1370,7 +1370,7 @@ class generator
 
         // For mocked properties with asymmetric visibility, we need to maintain the same visibility
         $code = "\t" . $visibility . ' ' . $typeHint . '$' . $propertyName . ';' . PHP_EOL;
-        
+
         return $code;
     }
 }

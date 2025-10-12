@@ -59,7 +59,6 @@ class ArrayFunctionsTest extends atoum
     {
         $this
             ->given($examples = new ArrayFunctions())
-
             // With admin
             ->and($usersWithAdmin = [
                 ['role' => 'user'],
@@ -85,7 +84,6 @@ class ArrayFunctionsTest extends atoum
     {
         $this
             ->given($examples = new ArrayFunctions())
-
             // All active
             ->and($allActive = [
                 ['active' => true],
@@ -112,7 +110,6 @@ class ArrayFunctionsTest extends atoum
     {
         $this
             ->given($examples = new ArrayFunctions())
-
             // Valid form
             ->and($validFields = [
                 'name' => 'John Doe',
@@ -154,14 +151,13 @@ class ArrayFunctionsTest extends atoum
     {
         $this
             ->given($examples = new ArrayFunctions())
-
             // With expired items
             ->and($past = (new \DateTime())->modify('-1 day'))
             ->and($future = (new \DateTime())->modify('+1 day'))
             ->and($items = [
-                (object)['name' => 'Valid1', 'expiresAt' => $future],
-                (object)['name' => 'Expired1', 'expiresAt' => $past],
-                (object)['name' => 'Expired2', 'expiresAt' => $past],
+                (object) ['name' => 'Valid1', 'expiresAt' => $future],
+                (object) ['name' => 'Expired1', 'expiresAt' => $past],
+                (object) ['name' => 'Expired2', 'expiresAt' => $past],
             ])
 
             ->when($expired = $examples->getFirstExpiredItem($items))
@@ -171,8 +167,8 @@ class ArrayFunctionsTest extends atoum
 
             // Without expired items
             ->and($allValid = [
-                (object)['name' => 'Valid1', 'expiresAt' => $future],
-                (object)['name' => 'Valid2', 'expiresAt' => $future],
+                (object) ['name' => 'Valid1', 'expiresAt' => $future],
+                (object) ['name' => 'Valid2', 'expiresAt' => $future],
             ])
             ->when($expired = $examples->getFirstExpiredItem($allValid))
             ->then
@@ -193,4 +189,3 @@ class ArrayFunctionsTest extends atoum
         ;
     }
 }
-

@@ -1835,7 +1835,7 @@ abstract class test implements observable, \countable
         if (version_compare(PHP_VERSION, '8.4.0', '>=') && $methodName === null) {
             $methodName = '';
         }
-        
+
         if (isset($this->testMethods[$methodName]) === false) {
             throw new exceptions\logic\invalidArgument('Test method ' . $this->class . '::' . $methodName . '() does not exist');
         }
