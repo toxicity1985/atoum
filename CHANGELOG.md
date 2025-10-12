@@ -1,12 +1,17 @@
 # `dev-main`
 
-* [#902](https://github.com/atoum/atoum/pull/902) Fix PHP 8.5 deprecations ([@cedric-anne])
+# 4.4.0 - 2025-10-12
 
+* [#905](https://github.com/atoum/atoum/pull/905) Fix linter ([@cedric-anne])
+* [#904](https://github.com/atoum/atoum/pull/904) Fix some test ON PHP 8.4 ([@cedric-anne])
 * [#903](https://github.com/atoum/atoum/pull/903) Fix some PHP deprecations ([@cedric-anne])
+* [#902](https://github.com/atoum/atoum/pull/902) Fix PHP 8.5 deprecations ([@cedric-anne])
 
 # 4.3.0 - 2025-05-16
 
+* [#900](https://github.com/atoum/atoum/pull/900) Fix preg_match deprecation in analyzer.php ([@pierstoval])
 * [#899](https://github.com/atoum/atoum/pull/899) Fix PHP 8.4 deprecations ([@cedric-anne])
+* [#897](https://github.com/atoum/atoum/pull/897) Remove deprecated dynamic property usage ([@fberthereau])
 
 # 4.2.0 - 2023-07-30
 
@@ -373,3 +378,5 @@
 [@idetinkin]: https://github.com/idetinkin
 [@villfa]: https://github.com/villfa
 [@shavounet]: https://github.com/shavounet
+[@fberthereau]: https://github.com/fberthereau
+[@pierstoval]: https://github.com/pierstoval
