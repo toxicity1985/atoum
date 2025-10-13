@@ -406,6 +406,7 @@ class generator
 
                         switch (true) {
                             case $returnTypeName === 'self':
+                            case $returnTypeName === 'static':
                             case $returnTypeName === 'parent':
                             case $returnTypeName === $class->getName():
                             case interface_exists($returnTypeName) && $class->implementsInterface($returnTypeName):
@@ -456,6 +457,7 @@ class generator
 
                             switch (true) {
                                 case $returnTypeName === 'self':
+                                case $returnTypeName === 'static':
                                 case $returnTypeName === 'parent':
                                 case $returnTypeName === $class->getName():
                                 case interface_exists($returnTypeName) && $class->implementsInterface($returnTypeName):
@@ -565,6 +567,7 @@ class generator
 
                         switch (true) {
                             case $returnTypeName === 'self':
+                            case $returnTypeName === 'static':
                             case $returnTypeName === 'parent':
                             case $returnTypeName === $class->getName():
                             case interface_exists($returnTypeName) && $class->implementsInterface($returnTypeName):
@@ -676,12 +679,25 @@ class generator
                 break;
 
             case $returnType instanceof \reflectionUnionType:
-                $types = array_map(
-                    function (\reflectionNamedType $type) {
-                        return (!$type->isBuiltin() ? '\\' : '') . $type->getName();
-                    },
-                    $returnType->getTypes()
-                );
+                $types = [];
+                $declaringClass = $method->getDeclaringClass();
+
+                foreach ($returnType->getTypes() as $type) {
+                    $typeName = $type->getName();
+
+                    // Handle self, static, and parent in union types
+                    if ($typeName === 'self') {
+                        $types[] = '\\' . $declaringClass->getName();
+                    } elseif ($typeName === 'parent') {
+                        $parentClass = $declaringClass->getParentClass();
+                        $types[] = '\\' . $parentClass->getName();
+                    } elseif ($typeName === 'static') {
+                        $types[] = 'static';
+                    } else {
+                        $types[] = (!$type->isBuiltin() ? '\\' : '') . $typeName;
+                    }
+                }
+
                 $returnTypeCode = ': ' . implode('|', $types);
                 break;
 
