@@ -1243,6 +1243,13 @@ class generator
             }
             
             $nullable = $type->allowsNull() && $typeName !== 'mixed' && $typeName !== 'null' ? '?' : '';
+            
+            // Handle special keyword types: self, parent, static
+            // These must NEVER have a backslash prefix
+            if (in_array($typeName, ['self', 'parent', 'static'])) {
+                return $nullable . $typeName;
+            }
+            
             return $nullable . (!$type->isBuiltin() ? '\\' : '') . $typeName;
         }
 

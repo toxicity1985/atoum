@@ -41,7 +41,7 @@ class analyzer
     /**
      * Format a ReflectionType into a string representation
      * Handles: NamedType, UnionType, IntersectionType (PHP 8.1+), and DNF types (PHP 8.2+)
-     * 
+     *
      * Special handling for named types:
      * - 'self' is resolved to the declaring class name
      * - 'parent' is resolved to the parent class name
@@ -54,20 +54,32 @@ class analyzer
             $typeName = $type->getName();
 
             // Handle special keyword types: 'self', 'parent', 'static'
-            if ($typeName === 'static') {
-                // 'static' is always kept as-is (late static binding keyword)
-                return 'static';
-            }
-
-            if ($declaringClass !== null) {
-                if ($typeName === 'self') {
-                    $typeName = $declaringClass->getName();
-                } elseif ($typeName === 'parent') {
-                    $parentClass = $declaringClass->getParentClass();
-                    if ($parentClass !== false) {
-                        $typeName = $parentClass->getName();
-                    }
+            // These must NEVER have a backslash prefix
+            if (in_array($typeName, ['self', 'parent', 'static'])) {
+                if ($typeName === 'static') {
+                    // 'static' is always kept as-is (late static binding keyword)
+                    return 'static';
                 }
+
+                if ($declaringClass !== null) {
+                    if ($typeName === 'self') {
+                        $typeName = $declaringClass->getName();
+                    } elseif ($typeName === 'parent') {
+                        $parentClass = $declaringClass->getParentClass();
+                        if ($parentClass !== false) {
+                            $typeName = $parentClass->getName();
+                        } else {
+                            // No parent class, return 'parent' as-is
+                            return 'parent';
+                        }
+                    }
+                } else {
+                    // Cannot resolve without declaring class, return as-is
+                    return $typeName;
+                }
+
+                // Now $typeName is resolved to a class name, add backslash
+                return '\\' . $typeName;
             }
 
             $prefix = '';
