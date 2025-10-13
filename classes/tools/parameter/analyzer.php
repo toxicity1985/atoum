@@ -41,6 +41,7 @@ class analyzer
     /**
      * Format a ReflectionType into a string representation
      * Handles: NamedType, UnionType, IntersectionType (PHP 8.1+), and DNF types (PHP 8.2+)
+     * 
      * Special handling for named types:
      * - 'self' is resolved to the declaring class name
      * - 'parent' is resolved to the parent class name
