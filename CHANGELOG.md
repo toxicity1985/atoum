@@ -1,5 +1,8 @@
 # `dev-main`
 
+# 4.4.1 - 2025-10-14
+* [#916](https://github.com/atoum/atoum/pull/916) Fix issue related to self, parent and static return type ([@toxicity1985])
+
 # 4.4.0 - 2025-10-12
 
 * [#905](https://github.com/atoum/atoum/pull/905) Fix linter ([@cedric-anne])
