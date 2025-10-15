@@ -1127,16 +1127,10 @@ class generator
 
     /**
      * Check if a property has hooks (PHP 8.4+)
+     * Note: Caller must ensure PHP version >= 8.4
      */
     protected function hasPropertyHooks(\ReflectionProperty $property): bool
     {
-        // PHP 8.4+ feature
-        if (version_compare(PHP_VERSION, '8.4.0', '<')) {
-            throw new \LogicException(
-                'Property hooks are only available in PHP 8.4+, current version is ' . PHP_VERSION
-            );
-        }
-
         try {
             $hooks = $property->getHooks();
             return !empty($hooks);
@@ -1293,16 +1287,10 @@ class generator
 
     /**
      * Check if a property has asymmetric visibility (PHP 8.4+)
+     * Note: Caller must ensure PHP version >= 8.4
      */
     protected function hasAsymmetricVisibility(\ReflectionProperty $property): bool
     {
-        // Check if PHP 8.4+ feature is available
-        if (version_compare(PHP_VERSION, '8.4.0', '<')) {
-            throw new \LogicException(
-                'Asymmetric visibility is only available in PHP 8.4+, current version is ' . PHP_VERSION
-            );
-        }
-
         try {
             // Get read visibility
             $isPublicRead = $property->isPublic();
