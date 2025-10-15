@@ -495,24 +495,24 @@ class generator
         $propertiesCode = '';
 
         // PHP 8.0+ : Generate promoted properties from constructor
-        if (method_exists(\ReflectionParameter::class, 'isPromoted')) {
+        if (version_compare(PHP_VERSION, '8.0.0', '>=')) {
             $propertiesCode .= $this->generatePromotedProperties($class);
         }
 
         // PHP 8.4+ : Generate property hooks
-        if (method_exists(\ReflectionProperty::class, 'getHooks')) {
+        if (version_compare(PHP_VERSION, '8.4.0', '>=')) {
             $propertiesCode .= $this->generatePropertiesWithHooks($class);
         }
 
         // PHP 8.4+ : Generate asymmetric visibility
-        if (method_exists(\ReflectionProperty::class, 'isPublicSet')) {
+        if (version_compare(PHP_VERSION, '8.4.0', '>=')) {
             $propertiesCode .= $this->generatePropertiesWithAsymmetricVisibility($class);
         }
 
         // PHP 8.2+ : Check if class is readonly
         $classModifiers = 'final ';
         try {
-            if (method_exists($class, 'isReadOnly') && $class->isReadOnly()) {
+            if (version_compare(PHP_VERSION, '8.2.0', '>=') && $class->isReadOnly()) {
                 $classModifiers .= 'readonly ';
             }
         } catch (\Throwable $e) {
@@ -1077,7 +1077,7 @@ class generator
 
         foreach ($constructor->getParameters() as $parameter) {
             try {
-                if (method_exists($parameter, 'isPromoted') && $parameter->isPromoted()) {
+                if (version_compare(PHP_VERSION, '8.0.0', '>=') && $parameter->isPromoted()) {
                     $propertiesCode .= $this->generatePromotedProperty($parameter);
                 }
             } catch (\Throwable $e) {
@@ -1109,7 +1109,7 @@ class generator
 
         // Check if readonly (PHP 8.1+)
         $readonly = '';
-        if (method_exists($property, 'isReadOnly') && $property->isReadOnly()) {
+        if (version_compare(PHP_VERSION, '8.1.0', '>=') && $property->isReadOnly()) {
             $readonly = 'readonly ';
         }
 
@@ -1131,8 +1131,8 @@ class generator
     protected function hasPropertyHooks(\ReflectionProperty $property): bool
     {
         try {
-            // method_exists() est plus rapide qu'un try/catch systématique
-            if (!method_exists($property, 'getHooks')) {
+            // PHP 8.4+ feature
+            if (version_compare(PHP_VERSION, '8.4.0', '<')) {
                 return false;
             }
 
@@ -1290,8 +1290,8 @@ class generator
     protected function hasAsymmetricVisibility(\ReflectionProperty $property): bool
     {
         try {
-            // Check if PHP 8.4+ methods are available
-            if (!method_exists($property, 'isPublicSet')) {
+            // Check if PHP 8.4+ feature is available
+            if (version_compare(PHP_VERSION, '8.4.0', '<')) {
                 return false;
             }
 
