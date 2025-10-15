@@ -1131,17 +1131,8 @@ class generator
      */
     protected function hasPropertyHooks(\ReflectionProperty $property): bool
     {
-        try {
-            $hooks = $property->getHooks();
-            return !empty($hooks);
-        } catch (\Error $e) {
-            // Only catch Error for mocked properties in tests (e.g., method doesn't exist on mock)
-            // Let other exceptions propagate
-            if (strpos($e->getMessage(), 'Call to undefined method') !== false) {
-                return false;
-            }
-            throw $e;
-        }
+        $hooks = $property->getHooks();
+        return !empty($hooks);
     }
 
     /**
@@ -1291,37 +1282,28 @@ class generator
      */
     protected function hasAsymmetricVisibility(\ReflectionProperty $property): bool
     {
-        try {
-            // Get read visibility
-            $isPublicRead = $property->isPublic();
-            $isProtectedRead = $property->isProtected();
-            $isPrivateRead = $property->isPrivate();
+        // Get read visibility
+        $isPublicRead = $property->isPublic();
+        $isProtectedRead = $property->isProtected();
+        $isPrivateRead = $property->isPrivate();
 
-            // Get write visibility
-            $isPublicWrite = $property->isPublicSet();
-            $isProtectedWrite = $property->isProtectedSet();
-            $isPrivateWrite = $property->isPrivateSet();
+        // Get write visibility
+        $isPublicWrite = $property->isPublicSet();
+        $isProtectedWrite = $property->isProtectedSet();
+        $isPrivateWrite = $property->isPrivateSet();
 
-            // If read and write visibilities differ, it's asymmetric
-            if ($isPublicRead && !$isPublicWrite) {
-                return true;
-            }
-            if ($isProtectedRead && !$isProtectedWrite) {
-                return true;
-            }
-            if ($isPrivateRead && !$isPrivateWrite) {
-                return true;
-            }
-
-            return false;
-        } catch (\Error $e) {
-            // Only catch Error for mocked properties in tests (e.g., method doesn't exist on mock)
-            // Let other exceptions propagate
-            if (strpos($e->getMessage(), 'Call to undefined method') !== false) {
-                return false;
-            }
-            throw $e;
+        // If read and write visibilities differ, it's asymmetric
+        if ($isPublicRead && !$isPublicWrite) {
+            return true;
         }
+        if ($isProtectedRead && !$isProtectedWrite) {
+            return true;
+        }
+        if ($isPrivateRead && !$isPrivateWrite) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
