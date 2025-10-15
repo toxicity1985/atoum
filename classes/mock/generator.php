@@ -1132,15 +1132,21 @@ class generator
     {
         // PHP 8.4+ feature
         if (version_compare(PHP_VERSION, '8.4.0', '<')) {
-            return false;
+            throw new \LogicException(
+                'Property hooks are only available in PHP 8.4+, current version is ' . PHP_VERSION
+            );
         }
 
         try {
             $hooks = $property->getHooks();
             return !empty($hooks);
-        } catch (\Throwable $e) {
-            // Catch errors for mocked properties in tests
-            return false;
+        } catch (\Error $e) {
+            // Only catch Error for mocked properties in tests (e.g., method doesn't exist on mock)
+            // Let other exceptions propagate
+            if (strpos($e->getMessage(), 'Call to undefined method') !== false) {
+                return false;
+            }
+            throw $e;
         }
     }
 
@@ -1292,7 +1298,9 @@ class generator
     {
         // Check if PHP 8.4+ feature is available
         if (version_compare(PHP_VERSION, '8.4.0', '<')) {
-            return false;
+            throw new \LogicException(
+                'Asymmetric visibility is only available in PHP 8.4+, current version is ' . PHP_VERSION
+            );
         }
 
         try {
@@ -1318,9 +1326,13 @@ class generator
             }
 
             return false;
-        } catch (\Throwable $e) {
-            // Catch errors for mocked properties in tests
-            return false;
+        } catch (\Error $e) {
+            // Only catch Error for mocked properties in tests (e.g., method doesn't exist on mock)
+            // Let other exceptions propagate
+            if (strpos($e->getMessage(), 'Call to undefined method') !== false) {
+                return false;
+            }
+            throw $e;
         }
     }
 
