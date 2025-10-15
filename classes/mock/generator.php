@@ -1130,15 +1130,16 @@ class generator
      */
     protected function hasPropertyHooks(\ReflectionProperty $property): bool
     {
-        try {
-            // PHP 8.4+ feature
-            if (version_compare(PHP_VERSION, '8.4.0', '<')) {
-                return false;
-            }
+        // PHP 8.4+ feature
+        if (version_compare(PHP_VERSION, '8.4.0', '<')) {
+            return false;
+        }
 
+        try {
             $hooks = $property->getHooks();
             return !empty($hooks);
         } catch (\Throwable $e) {
+            // Catch errors for mocked properties in tests
             return false;
         }
     }
@@ -1289,12 +1290,12 @@ class generator
      */
     protected function hasAsymmetricVisibility(\ReflectionProperty $property): bool
     {
-        try {
-            // Check if PHP 8.4+ feature is available
-            if (version_compare(PHP_VERSION, '8.4.0', '<')) {
-                return false;
-            }
+        // Check if PHP 8.4+ feature is available
+        if (version_compare(PHP_VERSION, '8.4.0', '<')) {
+            return false;
+        }
 
+        try {
             // Get read visibility
             $isPublicRead = $property->isPublic();
             $isProtectedRead = $property->isProtected();
@@ -1318,6 +1319,7 @@ class generator
 
             return false;
         } catch (\Throwable $e) {
+            // Catch errors for mocked properties in tests
             return false;
         }
     }
