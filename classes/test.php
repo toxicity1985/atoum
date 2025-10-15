@@ -1831,12 +1831,7 @@ abstract class test implements observable, \countable
 
     private function checkMethod($methodName)
     {
-        // PHP 8.4+: null as array key is deprecated, convert to empty string
-        if (version_compare(PHP_VERSION, '8.4.0', '>=') && $methodName === null) {
-            $methodName = '';
-        }
-
-        if (isset($this->testMethods[$methodName]) === false) {
+        if ($methodName === null || isset($this->testMethods[$methodName]) === false) {
             throw new exceptions\logic\invalidArgument('Test method ' . $this->class . '::' . $methodName . '() does not exist');
         }
 

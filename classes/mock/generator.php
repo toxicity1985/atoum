@@ -492,31 +492,16 @@ class generator
 
     protected function generateClassCode(\reflectionClass $class, $mockNamespace, $mockClass)
     {
-        $propertiesCode = '';
-
-        // PHP 8.0+ : Generate promoted properties from constructor
-        if (version_compare(PHP_VERSION, '8.0.0', '>=')) {
-            $propertiesCode .= $this->generatePromotedProperties($class);
-        }
-
-        // PHP 8.4+ : Generate property hooks
-        if (version_compare(PHP_VERSION, '8.4.0', '>=')) {
-            $propertiesCode .= $this->generatePropertiesWithHooks($class);
-        }
-
-        // PHP 8.4+ : Generate asymmetric visibility
-        if (version_compare(PHP_VERSION, '8.4.0', '>=')) {
-            $propertiesCode .= $this->generatePropertiesWithAsymmetricVisibility($class);
-        }
-
         // PHP 8.2+ : Check if class is readonly
         $classModifiers = 'final ';
-        try {
-            if (version_compare(PHP_VERSION, '8.2.0', '>=') && $class->isReadOnly()) {
-                $classModifiers .= 'readonly ';
+        if (version_compare(PHP_VERSION, '8.2.0', '>=')) {
+            try {
+                if ($class->isReadOnly()) {
+                    $classModifiers .= 'readonly ';
+                }
+            } catch (\Error $e) {
+                // Mocked ReflectionClass cannot execute isReadOnly() - treating as non-readonly
             }
-        } catch (\Throwable $e) {
-            // Ignore errors when checking for readonly class (e.g., mocked ReflectionClass)
         }
 
         return ($this->useStrictTypes ? 'declare(strict_types=1);' . PHP_EOL : '') .
@@ -524,7 +509,9 @@ class generator
             $classModifiers . 'class ' . $mockClass . ' extends \\' . $class->getName() . ' implements \\' . __NAMESPACE__ . '\\aggregator' . PHP_EOL .
             '{' . PHP_EOL .
             self::generateMockControllerMethods() .
-            $propertiesCode .
+            $this->generatePromotedProperties($class) .
+            $this->generatePropertiesWithHooks($class) .
+            $this->generatePropertiesWithAsymmetricVisibility($class) .
             $this->generateClassMethodCode($class) .
             '}' . PHP_EOL .
             '}'
@@ -715,7 +702,7 @@ class generator
                     // These types cannot be marked as nullable
                     return ': ' . $returnTypeName;
 
-                    // PHP 8.2+: Standalone null, true, false types
+                // PHP 8.2+: Standalone null, true, false types
                 case 'null':
                 case 'true':
                 case 'false':
@@ -1076,13 +1063,14 @@ class generator
         }
 
         foreach ($constructor->getParameters() as $parameter) {
-            try {
-                if (version_compare(PHP_VERSION, '8.0.0', '>=') && $parameter->isPromoted()) {
-                    $propertiesCode .= $this->generatePromotedProperty($parameter);
+            if (version_compare(PHP_VERSION, '8.0.0', '>=')) {
+                try {
+                    if ($parameter->isPromoted()) {
+                        $propertiesCode .= $this->generatePromotedProperty($parameter);
+                    }
+                } catch (\Error $e) {
+                    // Mocked ReflectionParameter cannot execute isPromoted() - treating as non-promoted
                 }
-            } catch (\Throwable $e) {
-                // Skip parameters that can't be analyzed (e.g., mocked parameters)
-                continue;
             }
         }
 
@@ -1140,6 +1128,10 @@ class generator
      */
     protected function generatePropertiesWithHooks(\ReflectionClass $class): string
     {
+        if (version_compare(PHP_VERSION, '8.4.0', '<')) {
+            return '';
+        }
+
         $propertiesCode = '';
 
         try {
@@ -1288,21 +1280,18 @@ class generator
         $isPrivateRead = $property->isPrivate();
 
         // Get write visibility
-        $isPublicWrite = $property->isPublicSet();
         $isProtectedWrite = $property->isProtectedSet();
         $isPrivateWrite = $property->isPrivateSet();
 
         // If read and write visibilities differ, it's asymmetric
-        if ($isPublicRead && !$isPublicWrite) {
+        if ($isPublicRead && ($isProtectedWrite || $isPrivateWrite)) {
             return true;
         }
-        if ($isProtectedRead && !$isProtectedWrite) {
+        if ($isProtectedRead && $isPrivateWrite) {
             return true;
         }
-        if ($isPrivateRead && !$isPrivateWrite) {
-            return true;
-        }
-
+        // Private read can't have more restrictive write visibility
+        
         return false;
     }
 
@@ -1316,8 +1305,7 @@ class generator
 
         // Check for asymmetric visibility (PHP 8.4+)
         if ($this->hasAsymmetricVisibility($property)) {
-            $writeVisibility = $property->isPublicSet() ? 'public' :
-                              ($property->isProtectedSet() ? 'protected' : 'private');
+            $writeVisibility = $property->isProtectedSet() ? 'protected' : 'private';
 
             return $readVisibility . ' ' . $writeVisibility . '(set)';
         }
@@ -1330,6 +1318,10 @@ class generator
      */
     protected function generatePropertiesWithAsymmetricVisibility(\ReflectionClass $class): string
     {
+        if (version_compare(PHP_VERSION, '8.4.0', '<')) {
+            return '';
+        }
+
         $propertiesCode = '';
 
         try {

@@ -4446,61 +4446,6 @@ if (version_compare(PHP_VERSION, '8.4.0', '>=') && method_exists(\ReflectionProp
 }
 
 /**
- * Test class with PHP 8.4 asymmetric visibility
- * This class is only used for testing when PHP 8.4+ is available
- */
-if (version_compare(PHP_VERSION, '8.4.0', '>=') && method_exists(\ReflectionProperty::class, 'isPublicSet')) {
-    // Use eval to avoid parse errors on PHP < 8.4
-    eval('
-        namespace atoum\atoum\tests\units\mock;
-        
-        class classWithAsymmetricVisibility
-        {
-            /**
-             * Balance is public for reading, private for writing
-             */
-            public private(set) float $balance = 0.0;
-            
-            /**
-             * Transaction count (read-only)
-             */
-            public private(set) int $transactionCount = 0;
-            
-            /**
-             * Regular property (no asymmetric visibility)
-             */
-            public string $name = "";
-
-            public function deposit(float $amount): void
-            {
-                if ($amount <= 0) {
-                    throw new \ValueError("Amount must be positive");
-                }
-                $this->balance += $amount;
-                $this->transactionCount++;
-            }
-
-            public function withdraw(float $amount): void
-            {
-                if ($amount <= 0) {
-                    throw new \ValueError("Amount must be positive");
-                }
-                if ($amount > $this->balance) {
-                    throw new \ValueError("Insufficient funds");
-                }
-                $this->balance -= $amount;
-                $this->transactionCount++;
-            }
-
-            public function getBalance(): float
-            {
-                return $this->balance;
-            }
-        }
-    ');
-}
-
-/**
  * Test classes with PHP 8.4 #[\Deprecated] attribute
  * These classes are only used for testing when PHP 8.4+ is available
  */

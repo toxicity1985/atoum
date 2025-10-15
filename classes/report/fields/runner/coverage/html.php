@@ -172,14 +172,14 @@ class html extends report\fields\runner\coverage\cli
                         }
 
                         // PHP 8.4+: null as array key is deprecated, use empty string instead
-                        $initialMethod = version_compare(PHP_VERSION, '8.4.0', '>=') ? '' : null;
+                        $initialMethod = null;
                         for ($currentMethod = $initialMethod, $lineNumber = 1, $line = $this->adapter->fgets($srcFile); $line !== false; $lineNumber++, $line = $this->adapter->fgets($srcFile)) {
                             if (isset($methodLines[$lineNumber]) === true) {
                                 $currentMethod = $methodLines[$lineNumber];
                             }
 
                             switch (true) {
-                                case isset($methods[$currentMethod]) === false || (isset($methods[$currentMethod][$lineNumber]) === false || $methods[$currentMethod][$lineNumber] == -2):
+                                case $currentMethod === null ||  isset($methods[$currentMethod]) === false || (isset($methods[$currentMethod][$lineNumber]) === false || $methods[$currentMethod][$lineNumber] == -2):
                                     $lineTemplateName = 'lineTemplates';
                                     break;
 
