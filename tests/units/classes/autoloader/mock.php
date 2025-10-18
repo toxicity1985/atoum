@@ -88,7 +88,7 @@ class mock extends atoum\test
                 $generator = new \mock\atoum\atoum\mock\generator(),
                 $this->newTestedInstance($generator)
             )
-            ->if($this->calling($generator)->generate->doesNothing)
+            ->if($this->calling($generator)->generate = $generator)
             ->then
                 ->object($this->testedInstance->requireClass($class = uniqid()))->isTestedInstance
                 ->mock($generator)
