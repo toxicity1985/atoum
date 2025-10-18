@@ -9,8 +9,8 @@ class xunit extends atoum\reports\asynchronous
 {
     public const defaultTitle = 'atoum testsuite';
 
-    protected $score = null;
-    protected $assertions = [];
+    protected mixed $score = null;
+    protected array $assertions = [];
 
     public function __construct(?atoum\adapter $adapter = null)
     {
@@ -23,7 +23,7 @@ class xunit extends atoum\reports\asynchronous
         }
     }
 
-    public function handleEvent($event, atoum\observable $observable)
+    public function handleEvent(string $event, atoum\observable $observable)
     {
         $this->score = null;
 
@@ -42,10 +42,12 @@ class xunit extends atoum\reports\asynchronous
             $this->score = $observable->getScore();
         }
 
-        return parent::handleEvent($event, $observable);
+        parent::handleEvent($event, $observable);
+
+        return $this;
     }
 
-    protected function getTestedClasses()
+    protected function getTestedClasses(): array
     {
         $durations = $this->score->getDurations();
         $errors = $this->score->getErrors();
@@ -87,7 +89,7 @@ class xunit extends atoum\reports\asynchronous
         return $classes;
     }
 
-    public function build($event)
+    public function build(string $event): static
     {
         $this->string = '';
 
@@ -176,7 +178,7 @@ class xunit extends atoum\reports\asynchronous
         return $this;
     }
 
-    private static function getTestCase(\DOMDocument $document, \DOMElement $testSuite, $class, $method, $time, $assertions)
+    private static function getTestCase(\DOMDocument $document, \DOMElement $testSuite, string $class, string $method, float|int $time, int $assertions): \DOMElement
     {
         if (($testCase = self::findTestCase($document, $class, $method)) === null) {
             $testCase = $document->createElement('testcase');
@@ -199,7 +201,7 @@ class xunit extends atoum\reports\asynchronous
         return $testCase;
     }
 
-    private static function findTestCase(\DOMDocument $document, $class, $method)
+    private static function findTestCase(\DOMDocument $document, string $class, string $method): ?\DOMElement
     {
         $xpath = new \DOMXPath($document);
         $query = $xpath->query("//testcase[@classname='$class' and @name='$method']");

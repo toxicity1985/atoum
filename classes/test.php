@@ -28,61 +28,61 @@ abstract class test implements observable, \countable
     public const defaultEngine = 'concurrent';
     public const enginesNamespace = '\atoum\atoum\test\engines';
 
-    private $score = null;
-    private $locale = null;
-    private $adapter = null;
-    private $mockGenerator = null;
-    private $mockAutoloader = null;
-    private $factoryBuilder = null;
-    private $reflectionMethodFactory = null;
-    private $phpExtensionFactory;
-    private $asserterGenerator = null;
-    private $assertionManager = null;
-    private $phpFunctionMocker = null;
-    private $phpConstantMocker = null;
-    private $testAdapterStorage = null;
-    private $asserterCallManager = null;
-    private $mockControllerLinker = null;
-    private $phpPath = null;
-    private $testedClassName = null;
-    private $testedClassPath = null;
-    private $currentMethod = null;
-    private $testNamespace = null;
-    private $testMethodPrefix = null;
-    private $classEngine = null;
-    private $bootstrapFile = null;
-    private $autoloaderFile = null;
-    private $maxAsynchronousEngines = null;
-    private $asynchronousEngines = 0;
-    private $path = '';
-    private $class = '';
-    private $classNamespace = '';
-    private $observers = null;
-    private $tags = [];
-    private $phpVersions = [];
-    private $mandatoryExtensions = [];
-    private $supportedOs = [];
-    private $dataProviders = [];
-    private $testMethods = [];
-    private $runTestMethods = [];
-    private $engines = [];
-    private $methodEngines = [];
-    private $methodsAreNotVoid = [];
-    private $executeOnFailure = [];
-    private $ignore = false;
-    private $debugMode = false;
-    private $xdebugConfig = null;
-    private $codeCoverage = false;
-    private $branchesAndPathsCoverage = false;
-    private $classHasNotVoidMethods = false;
-    private $extensions = null;
-    private $analyzer;
+    private ?test\score $score = null;
+    private ?locale $locale = null;
+    private ?adapter $adapter = null;
+    private ?mock\generator $mockGenerator = null;
+    private ?autoloader\mock $mockAutoloader = null;
+    private ?factory\builder $factoryBuilder = null;
+    private ?\Closure $reflectionMethodFactory = null;
+    private ?\Closure $phpExtensionFactory = null;
+    private ?asserter\generator $asserterGenerator = null;
+    private ?test\assertion\manager $assertionManager = null;
+    private ?php\mocker\funktion $phpFunctionMocker = null;
+    private ?php\mocker\constant $phpConstantMocker = null;
+    private ?test\adapter\storage $testAdapterStorage = null;
+    private ?asserters\adapter\call\manager $asserterCallManager = null;
+    private ?mock\controller\linker $mockControllerLinker = null;
+    private ?string $phpPath = null;
+    private ?string $testedClassName = null;
+    private ?string $testedClassPath = null;
+    private ?string $currentMethod = null;
+    private ?string $testNamespace = null;
+    private ?string $testMethodPrefix = null;
+    private ?string $classEngine = null;
+    private ?string $bootstrapFile = null;
+    private ?string $autoloaderFile = null;
+    private ?int $maxAsynchronousEngines = null;
+    private int $asynchronousEngines = 0;
+    private string $path = '';
+    private string $class = '';
+    private string $classNamespace = '';
+    private ?\splObjectStorage $observers = null;
+    private array $tags = [];
+    private array $phpVersions = [];
+    private array $mandatoryExtensions = [];
+    private array $supportedOs = [];
+    private array $dataProviders = [];
+    private array $testMethods = [];
+    private array $runTestMethods = [];
+    private array $engines = [];
+    private array $methodEngines = [];
+    private array $methodsAreNotVoid = [];
+    private array $executeOnFailure = [];
+    private bool $ignore = false;
+    private bool $debugMode = false;
+    private ?string $xdebugConfig = null;
+    private bool $codeCoverage = false;
+    private bool $branchesAndPathsCoverage = false;
+    private bool $classHasNotVoidMethods = false;
+    private ?\splObjectStorage $extensions = null;
+    private ?analyzer $analyzer = null;
 
-    private static $namespace = null;
-    private static $methodPrefix = null;
+    private static ?string $namespace = null;
+    private static ?string $methodPrefix = null;
     private static $defaultEngine = self::defaultEngine;
 
-    public function __construct(?adapter $adapter = null, ?annotations\extractor $annotationExtractor = null, ?asserter\generator $asserterGenerator = null, ?test\assertion\manager $assertionManager = null, ?\closure $reflectionClassFactory = null, ?\closure $phpExtensionFactory = null, ?analyzer $analyzer = null)
+    public function __construct(?adapter $adapter = null, ?annotations\extractor $annotationExtractor = null, ?asserter\generator $asserterGenerator = null, ?test\assertion\manager $assertionManager = null, ?\Closure $reflectionClassFactory = null, ?\Closure $phpExtensionFactory = null, ?analyzer $analyzer = null)
     {
         $this
             ->setAdapter($adapter)
@@ -172,24 +172,22 @@ abstract class test implements observable, \countable
         $this->runTestMethods($this->getTestMethods());
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return $this->getClass();
     }
 
-    public function __get($property)
+    public function __get(string $property): mixed
     {
         return $this->assertionManager->__get($property);
     }
 
-    public function __set($property, $handler)
+    public function __set(string $property, mixed $handler): void
     {
         $this->assertionManager->{$property} = $handler;
-
-        return $this;
     }
 
-    public function __call($method, array $arguments)
+    public function __call(string $method, array $arguments): mixed
     {
         return $this->assertionManager->__call($method, $arguments);
     }
@@ -230,38 +228,38 @@ abstract class test implements observable, \countable
         return $this->mockControllerLinker;
     }
 
-    public function setScore(?test\score $score = null)
+    public function setScore(?test\score $score = null): static
     {
         $this->score = $score ?: new test\score();
 
         return $this;
     }
 
-    public function getScore()
+    public function getScore(): score
     {
         return $this->score;
     }
 
-    public function setLocale(?locale $locale = null)
+    public function setLocale(?locale $locale = null): static
     {
         $this->locale = $locale ?: new locale();
 
         return $this;
     }
 
-    public function getLocale()
+    public function getLocale(): ?locale
     {
         return $this->locale;
     }
 
-    public function setAdapter(?adapter $adapter = null)
+    public function setAdapter(?adapter $adapter = null): static
     {
         $this->adapter = $adapter ?: new adapter();
 
         return $this;
     }
 
-    public function getAdapter()
+    public function getAdapter(): adapter
     {
         return $this->adapter;
     }
@@ -331,7 +329,7 @@ abstract class test implements observable, \countable
 
     public function setFactoryBuilder(?factory\builder $factoryBuilder = null)
     {
-        $this->factoryBuilder = $factoryBuilder ?: new factory\builder\closure();
+        $this->factoryBuilder = $factoryBuilder ?: new factory\builder\Closure();
 
         return $this;
     }
@@ -341,7 +339,7 @@ abstract class test implements observable, \countable
         return $this->factoryBuilder;
     }
 
-    public function setReflectionMethodFactory(?\closure $factory = null)
+    public function setReflectionMethodFactory(?\Closure $factory = null)
     {
         $this->reflectionMethodFactory = $factory ?: function ($class, $method) {
             return new \reflectionMethod($class, $method);
@@ -350,7 +348,7 @@ abstract class test implements observable, \countable
         return $this;
     }
 
-    public function setPhpExtensionFactory(?\closure $factory = null)
+    public function setPhpExtensionFactory(?\Closure $factory = null)
     {
         $this->phpExtensionFactory = $factory ?: function ($extensionName) {
             return new php\extension($extensionName);
@@ -372,7 +370,7 @@ abstract class test implements observable, \countable
         return $this;
     }
 
-    public function getAsserterGenerator()
+    public function getAsserterGenerator(): asserter\generator
     {
         $this->testAdapterStorage->resetCalls();
 
@@ -385,7 +383,7 @@ abstract class test implements observable, \countable
 
         $this->assertionManager
             ->setHandler('when', function ($mixed) {
-                if ($mixed instanceof \closure) {
+                if ($mixed instanceof \Closure) {
                     $mixed();
                 }
                 return $this;
@@ -562,7 +560,7 @@ abstract class test implements observable, \countable
         return $this;
     }
 
-    public function getAsserterCallManager()
+    public function getAsserterCallManager(): asserters\adapter\call\manager
     {
         return $this->asserterCallManager;
     }
@@ -723,7 +721,7 @@ abstract class test implements observable, \countable
         throw new test\exceptions\skip($message);
     }
 
-    public function getAssertionManager()
+    public function getAssertionManager(): test\assertion\manager
     {
         return $this->assertionManager;
     }
@@ -779,21 +777,21 @@ abstract class test implements observable, \countable
         return (isset($this->methodEngines[$method]) === false ? null : $this->methodEngines[$method]);
     }
 
-    public function enableDebugMode()
+    public function enableDebugMode(): static
     {
         $this->debugMode = true;
 
         return $this;
     }
 
-    public function disableDebugMode()
+    public function disableDebugMode(): static
     {
         $this->debugMode = false;
 
         return $this;
     }
 
-    public function debugModeIsEnabled()
+    public function debugModeIsEnabled(): bool
     {
         return $this->debugMode;
     }
@@ -805,50 +803,50 @@ abstract class test implements observable, \countable
         return $this;
     }
 
-    public function getXdebugConfig()
+    public function getXdebugConfig(): ?string
     {
         return $this->xdebugConfig;
     }
 
-    public function executeOnFailure(\closure $closure)
+    public function executeOnFailure(\Closure $closure)
     {
         $this->executeOnFailure[] = $closure;
 
         return $this;
     }
 
-    public function codeCoverageIsEnabled()
+    public function codeCoverageIsEnabled(): bool
     {
         return $this->codeCoverage;
     }
 
-    public function enableCodeCoverage()
+    public function enableCodeCoverage(): static
     {
         $this->codeCoverage = $this->adapter->extension_loaded('xdebug');
 
         return $this;
     }
 
-    public function disableCodeCoverage()
+    public function disableCodeCoverage(): static
     {
         $this->codeCoverage = false;
 
         return $this;
     }
 
-    public function branchesAndPathsCoverageIsEnabled()
+    public function branchesAndPathsCoverageIsEnabled(): bool
     {
         return $this->branchesAndPathsCoverage;
     }
 
-    public function enableBranchesAndPathsCoverage()
+    public function enableBranchesAndPathsCoverage(): static
     {
         $this->branchesAndPathsCoverage = $this->codeCoverageIsEnabled() && defined('XDEBUG_CC_BRANCH_CHECK');
 
         return $this;
     }
 
-    public function disableBranchesAndPathsCoverage()
+    public function disableBranchesAndPathsCoverage(): static
     {
         $this->branchesAndPathsCoverage = false;
 
@@ -875,7 +873,7 @@ abstract class test implements observable, \countable
         return $this;
     }
 
-    public function getBootstrapFile()
+    public function getBootstrapFile(): ?string
     {
         return $this->bootstrapFile;
     }
@@ -887,7 +885,7 @@ abstract class test implements observable, \countable
         return $this;
     }
 
-    public function getAutoloaderFile()
+    public function getAutoloaderFile(): ?string
     {
         return $this->autoloaderFile;
     }
@@ -909,7 +907,7 @@ abstract class test implements observable, \countable
         return $this;
     }
 
-    public function getTestNamespace()
+    public function getTestNamespace(): string
     {
         return $this->testNamespace !== null ? $this->testNamespace : self::getNamespace();
     }
@@ -931,7 +929,7 @@ abstract class test implements observable, \countable
         return $this;
     }
 
-    public function getTestMethodPrefix()
+    public function getTestMethodPrefix(): string
     {
         return $this->testMethodPrefix !== null ? $this->testMethodPrefix : self::getMethodPrefix();
     }
@@ -961,14 +959,14 @@ abstract class test implements observable, \countable
         return array_values($tags);
     }
 
-    public function setTags(array $tags)
+    public function setTags(array $tags): static
     {
         $this->tags = $tags;
 
         return $this;
     }
 
-    public function getTags()
+    public function getTags(): array
     {
         return $this->tags;
     }
@@ -1002,7 +1000,7 @@ abstract class test implements observable, \countable
         return $this->dataProviders;
     }
 
-    public function getTestedClassName()
+    public function getTestedClassName(): ?string
     {
         if ($this->testedClassName === null) {
             $this->testedClassName = self::getTestedClassNameFromTestClass($this->getClass(), $this->getTestNamespace(), $this->getAnalyzer());
@@ -1011,14 +1009,14 @@ abstract class test implements observable, \countable
         return $this->testedClassName;
     }
 
-    public function getTestedClassNamespace()
+    public function getTestedClassNamespace(): string
     {
         $testedClassName = $this->getTestedClassName();
 
         return substr($testedClassName, 0, strrpos($testedClassName, '\\'));
     }
 
-    public function getTestedClassPath()
+    public function getTestedClassPath(): ?string
     {
         if ($this->testedClassPath === null) {
             $testedClass = new \reflectionClass($this->getTestedClassName());
@@ -1040,17 +1038,17 @@ abstract class test implements observable, \countable
         return $this;
     }
 
-    public function getClass()
+    public function getClass(): string
     {
         return $this->class;
     }
 
-    public function getClassNamespace()
+    public function getClassNamespace(): string
     {
         return $this->classNamespace;
     }
 
-    public function getPath()
+    public function getPath(): string
     {
         return $this->path;
     }
@@ -1060,7 +1058,7 @@ abstract class test implements observable, \countable
         return array_values(array_uintersect($methods, $this->getTestMethods($tags), 'strcasecmp'));
     }
 
-    public function getTestMethods(array $tags = [])
+    public function getTestMethods(array $tags = []): array
     {
         $testMethods = [];
 
@@ -1073,7 +1071,7 @@ abstract class test implements observable, \countable
         return $testMethods;
     }
 
-    public function getCurrentMethod()
+    public function getCurrentMethod(): ?string
     {
         return $this->currentMethod;
     }
@@ -1089,7 +1087,7 @@ abstract class test implements observable, \countable
     }
 
     #[\ReturnTypeWillChange]
-    public function count()
+    public function count(): int
     {
         return count($this->runTestMethods);
     }
@@ -1113,13 +1111,11 @@ abstract class test implements observable, \countable
         return iterator_to_array($this->observers);
     }
 
-    public function callObservers($event)
+    public function callObservers(string $event): void
     {
         foreach ($this->observers as $observer) {
             $observer->handleEvent($event, $this);
         }
-
-        return $this;
     }
 
     public function ignore($boolean)
@@ -1172,7 +1168,7 @@ abstract class test implements observable, \countable
         return $isIgnored;
     }
 
-    public function runTestMethods(array $methods, array $tags = [])
+    public function runTestMethods(array $methods, array $tags = []): static
     {
         $this->runTestMethods = $runTestMethods = [];
 
@@ -1223,7 +1219,7 @@ abstract class test implements observable, \countable
         return $this;
     }
 
-    public function runTestMethod($testMethod, array $tags = [])
+    public function runTestMethod(string $testMethod, array $tags = []): static
     {
         if ($this->methodIsIgnored($testMethod, $tags) === false) {
             $this->mockAutoloader->setMockGenerator($this->mockGenerator)->register();
@@ -1531,7 +1527,7 @@ abstract class test implements observable, \countable
             }
         }
 
-        if ($dataProvider instanceof \closure) {
+        if ($dataProvider instanceof \Closure) {
             throw new exceptions\logic\invalidArgument('Cannot use a closure as a data provider for method ' . $this->class . '::' . $testMethodName . '()');
         }
 
@@ -1862,10 +1858,8 @@ abstract class test implements observable, \countable
                 if ($score !== null) {
                     unset($this->engines[$this->currentMethod]);
 
-                    $this
-                        ->callObservers(self::afterTestMethod)
-                        ->score
-                        ->merge($score);
+                    $this->callObservers(self::afterTestMethod);
+                    $this->score->merge($score);
 
                     $runtimeExceptions = $score->getRuntimeExceptions();
 
@@ -1943,7 +1937,9 @@ abstract class test implements observable, \countable
             if ($this->canRunEngine($engine) === true) {
                 unset($this->runTestMethods[$this->currentMethod]);
 
-                $this->engines[$this->currentMethod] = $engine->run($this->callObservers(self::beforeTestMethod));
+                $this->callObservers(self::beforeTestMethod);
+                $engine->run($this);
+                $this->engines[$this->currentMethod] = $engine;
 
                 if ($engine->isAsynchronous() === true) {
                     $this->asynchronousEngines++;

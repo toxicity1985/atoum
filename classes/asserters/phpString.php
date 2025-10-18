@@ -2,11 +2,13 @@
 
 namespace atoum\atoum\asserters;
 
+use atoum\atoum\asserters\integer;
+
 class phpString extends variable
 {
-    protected $charlist = null;
+    protected ?string $charlist = null;
 
-    public function __get($asserter)
+    public function __get(string $asserter): mixed
     {
         switch (strtolower($asserter)) {
             case 'length':
@@ -18,7 +20,7 @@ class phpString extends variable
             case 'isnotempty':
                 return $this->isNotEmpty();
 
-            case 'toArray':
+            case 'toarray':
                 return $this->toArray();
 
             default:
@@ -26,17 +28,17 @@ class phpString extends variable
         }
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return (is_string($this->value) === false ? parent::__toString() : $this->_('string(%s) \'%s\'', strlen($this->value), addcslashes($this->value, $this->charlist ?? '')));
     }
 
-    public function getCharlist()
+    public function getCharlist(): ?string
     {
         return $this->charlist;
     }
 
-    public function setWith($value, $charlist = null, $checkType = true)
+    public function setWith(mixed $value, ?string $charlist = null, bool $checkType = true): static
     {
         parent::setWith($value);
 
@@ -53,22 +55,22 @@ class phpString extends variable
         return $this;
     }
 
-    public function isEmpty($failMessage = null)
+    public function isEmpty(?string $failMessage = null): static
     {
         return $this->isEqualTo('', $failMessage ?: $this->_('string is not empty'));
     }
 
-    public function isNotEmpty($failMessage = null)
+    public function isNotEmpty(?string $failMessage = null): static
     {
         return $this->isNotEqualTo('', $failMessage ?: $this->_('string is empty'));
     }
 
-    public function match($pattern, $failMessage = null)
+    public function match(string $pattern, ?string $failMessage = null): static
     {
         return $this->matches($pattern, $failMessage);
     }
 
-    public function matches($pattern, $failMessage = null)
+    public function matches(string $pattern, ?string $failMessage = null): static
     {
         if (preg_match($pattern, $this->valueIsSet()->value) === 1) {
             $this->pass();
@@ -79,7 +81,7 @@ class phpString extends variable
         return $this;
     }
 
-    public function notMatches($pattern, $failMessage = null)
+    public function notMatches(string $pattern, ?string $failMessage = null): static
     {
         if (preg_match($pattern, $this->valueIsSet()->value) === 0) {
             $this->pass();
@@ -90,12 +92,12 @@ class phpString extends variable
         return $this;
     }
 
-    public function isEqualTo($value, $failMessage = null)
+    public function isEqualTo(mixed $value, ?string $failMessage = null): static
     {
         return parent::isEqualTo($value, $failMessage ?: $this->_('strings are not equal'));
     }
 
-    public function isEqualToContentsOfFile($path, $failMessage = null)
+    public function isEqualToContentsOfFile(string $path, ?string $failMessage = null): static
     {
         $this->valueIsSet();
 
@@ -108,7 +110,7 @@ class phpString extends variable
         }
     }
 
-    public function hasLength($length, $failMessage = null)
+    public function hasLength(int $length, ?string $failMessage = null): static
     {
         if (strlen($this->valueIsSet()->value) == $length) {
             $this->pass();
@@ -119,7 +121,7 @@ class phpString extends variable
         return $this;
     }
 
-    public function hasLengthGreaterThan($length, $failMessage = null)
+    public function hasLengthGreaterThan(int $length, ?string $failMessage = null): static
     {
         if (strlen($this->valueIsSet()->value) > $length) {
             $this->pass();
@@ -130,7 +132,7 @@ class phpString extends variable
         return $this;
     }
 
-    public function hasLengthLessThan($length, $failMessage = null)
+    public function hasLengthLessThan(int $length, ?string $failMessage = null): static
     {
         if (strlen($this->valueIsSet()->value) < $length) {
             $this->pass();
@@ -141,7 +143,7 @@ class phpString extends variable
         return $this;
     }
 
-    public function contains($fragment, $failMessage = null)
+    public function contains(string $fragment, ?string $failMessage = null): static
     {
         if (strpos($this->valueIsSet()->value, $fragment) !== false) {
             $this->pass();
@@ -152,7 +154,7 @@ class phpString extends variable
         return $this;
     }
 
-    public function notContains($fragment, $failMessage = null)
+    public function notContains(string $fragment, ?string $failMessage = null): static
     {
         if (strpos($this->valueIsSet()->value, $fragment) !== false) {
             $this->fail($failMessage ?: $this->_('%s contains %s', $this, $this->analyzer->getTypeOf($fragment)));
@@ -163,7 +165,7 @@ class phpString extends variable
         return $this;
     }
 
-    public function startWith($fragment, $failMessage = null)
+    public function startWith(string $fragment, ?string $failMessage = null): static
     {
         if (strpos($this->valueIsSet()->value, $fragment) === 0) {
             $this->pass();
@@ -174,7 +176,7 @@ class phpString extends variable
         return $this;
     }
 
-    public function notStartWith($fragment, $failMessage = null)
+    public function notStartWith(string $fragment, ?string $failMessage = null): static
     {
         $fragmentPosition = strpos($this->valueIsSet()->value, $fragment);
 
@@ -187,7 +189,7 @@ class phpString extends variable
         return $this;
     }
 
-    public function endWith($fragment, $failMessage = null)
+    public function endWith(string $fragment, ?string $failMessage = null): static
     {
         if (strpos($this->valueIsSet()->value, $fragment) === (strlen($this->valueIsSet()->value) - strlen($fragment))) {
             $this->pass();
@@ -198,7 +200,7 @@ class phpString extends variable
         return $this;
     }
 
-    public function notEndWith($fragment, $failMessage = null)
+    public function notEndWith(string $fragment, ?string $failMessage = null): static
     {
         if (strpos($this->valueIsSet()->value, $fragment) === (strlen($this->valueIsSet()->value) - strlen($fragment))) {
             $this->fail($failMessage ?: $this->_('%s end with %s', $this, $this->analyzer->getTypeOf($fragment)));
@@ -209,12 +211,12 @@ class phpString extends variable
         return $this;
     }
 
-    public function toArray()
+    public function toArray(): phpArray
     {
         return $this->generator->castToArray($this->valueIsSet()->value);
     }
 
-    protected function getLengthAsserter()
+    protected function getLengthAsserter(): \atoum\atoum\asserters\integer
     {
         return $this->generator->__call('integer', [strlen($this->valueIsSet()->value)]);
     }
