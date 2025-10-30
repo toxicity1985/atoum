@@ -8,6 +8,18 @@
 | 7.2 -> 8.1  | 4.X -> 4.1          |
 | 8.x         | 4.1 < 4.X (current) |
 
+## 🚀 Full PHP 8.0-8.4 Support
+
+*atoum* now has **complete support** for modern PHP features, including:
+
+- **PHP 8.0**: Constructor Property Promotion, Union Types, Named Arguments, Attributes
+- **PHP 8.1**: Readonly Properties, Intersection Types, Enums, Never Return Type
+- **PHP 8.2**: Readonly Classes, DNF Types, Standalone `true`/`false`/`null` types
+- **PHP 8.3**: `#[\Override]` Attribute, Typed Class Constants
+- **PHP 8.4**: Property Hooks, Asymmetric Visibility, `#[\Deprecated]` Attribute
+
+All these features are fully supported in the **mock generator**, ensuring your modern PHP code can be properly tested. See [PHP_MODERN_SUPPORT.md](PHP_MODERN_SUPPORT.md) for detailed documentation.
+
 ## A simple, modern and intuitive unit testing framework for PHP!
 
 Just like SimpleTest or PHPUnit, *atoum* is a unit testing framework specific to the [PHP](http://www.php.net) language.
@@ -138,14 +150,14 @@ $runner->setTestGenerator($testGenerator);
 
 ## Prerequisites to use *atoum*
 
-*atoum* absolutely requires *PHP `>= 5.6.0`* or later to work.
+*atoum* absolutely requires *PHP `>= 8.0.0`* or later to work.
 On UNIX, in order to check whether you have the right PHP version, you just need to run the following command in your terminal:
 
 ```sh
-$ php -v | grep -oE 'php 5\.3\.(?:[3-9]|[1-9][0-9])|5\.[4-6]\.[0-9]+|[5-8]\.[0-9]+\.[0-9]+'
+$ php -v
 ```
 
-If `PHP 5.6.x` or equivalent gets displayed, then you have the right PHP version installed.
+If `PHP 8.0.x` or higher gets displayed, then you have the right PHP version installed.
 Should you want to use *atoum* using its PHAR archive, you also need [PHP](http://www.php.net) to be able to access the `phar` module, which is normally available by default.
 On UNIX, in order to check whether you have this module or not, you just need to run the following command in your terminal:
 

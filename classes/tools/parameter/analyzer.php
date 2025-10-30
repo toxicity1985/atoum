@@ -20,34 +20,28 @@ class analyzer
             return $parameterType->getName();
         }
 
-        $parameterTypes = $parameterType instanceof \ReflectionUnionType
-            ? $parameterType->getTypes()
-            : [$parameterType];
+        // Format the type into a string representation
+        $typeString = $this->formatReflectionType($parameterType, $parameter->getDeclaringClass());
 
-        $names = [];
-        foreach ($parameterTypes as $type) {
-            $name = $type instanceof \reflectionNamedType ? $type->getName() : (string) $type;
-            if ($name === 'self') {
-                $name = $parameter->getDeclaringClass()->getName();
-            }
-            $names[] = ($type instanceof \reflectionType && !$type->isBuiltin() ? '\\' : '') . $name;
-        }
-
-        if ($parameterType instanceof \ReflectionUnionType && $force_nullable && !in_array('null', $names)) {
-            $names[] = 'null';
-        }
-
+        // Handle nullable for non-union/intersection types
         $canBeNull = $force_nullable || $parameter->allowsNull() || ($parameter->isOptional() && !$parameter->isDefaultValueAvailable());
-        $prefix = $canBeNull && !($parameterType instanceof \ReflectionUnionType) ? '?' : '';
+        $isComplexType = $parameterType instanceof \ReflectionUnionType
+            || (class_exists(\ReflectionIntersectionType::class) && $parameterType instanceof \ReflectionIntersectionType);
 
-        $typeString = implode('|', $names);
+        $prefix = $canBeNull && !$isComplexType && !str_contains($typeString, '|') ? '?' : '';
+
+        // Add null to union if forced nullable
+        if ($parameterType instanceof \ReflectionUnionType && $force_nullable && !str_contains($typeString, 'null')) {
+            $typeString .= '|null';
+        }
 
         return $prefix . $typeString;
     }
 
     /**
      * Format a ReflectionType into a string representation
-     * Handles: NamedType, UnionType
+     * Handles: NamedType, UnionType, IntersectionType (PHP 8.1+), and DNF types (PHP 8.2+)
+     *
      * Special handling for named types:
      * - 'self' is resolved to the declaring class name
      * - 'parent' is resolved to the parent class name
@@ -60,20 +54,32 @@ class analyzer
             $typeName = $type->getName();
 
             // Handle special keyword types: 'self', 'parent', 'static'
-            if ($typeName === 'static') {
-                // 'static' is always kept as-is (late static binding keyword)
-                return 'static';
-            }
-
-            if ($declaringClass !== null) {
-                if ($typeName === 'self') {
-                    $typeName = $declaringClass->getName();
-                } elseif ($typeName === 'parent') {
-                    $parentClass = $declaringClass->getParentClass();
-                    if ($parentClass !== false) {
-                        $typeName = $parentClass->getName();
-                    }
+            // These must NEVER have a backslash prefix
+            if (in_array($typeName, ['self', 'parent', 'static'])) {
+                if ($typeName === 'static') {
+                    // 'static' is always kept as-is (late static binding keyword)
+                    return 'static';
                 }
+
+                if ($declaringClass !== null) {
+                    if ($typeName === 'self') {
+                        $typeName = $declaringClass->getName();
+                    } elseif ($typeName === 'parent') {
+                        $parentClass = $declaringClass->getParentClass();
+                        if ($parentClass !== false) {
+                            $typeName = $parentClass->getName();
+                        } else {
+                            // No parent class, return 'parent' as-is
+                            return 'parent';
+                        }
+                    }
+                } else {
+                    // Cannot resolve without declaring class, return as-is
+                    return $typeName;
+                }
+
+                // Now $typeName is resolved to a class name, add backslash
+                return '\\' . $typeName;
             }
 
             $prefix = '';
@@ -94,6 +100,22 @@ class analyzer
                 $type->getTypes()
             );
             return implode('|', $types);
+        }
+
+        // PHP 8.1+: Intersection types
+        if (class_exists(\ReflectionIntersectionType::class) && $type instanceof \ReflectionIntersectionType) {
+            $types = array_map(
+                function ($t) use ($declaringClass) {
+                    $formatted = $this->formatReflectionType($t, $declaringClass);
+                    // If the formatted type contains a union (|), wrap in parentheses for DNF
+                    if (strpos($formatted, '|') !== false) {
+                        return '(' . $formatted . ')';
+                    }
+                    return $formatted;
+                },
+                $type->getTypes()
+            );
+            return implode('&', $types);
         }
 
         // Fallback for unknown types

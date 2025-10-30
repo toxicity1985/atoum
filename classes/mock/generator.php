@@ -9,20 +9,20 @@ class generator
 {
     public const defaultNamespace = 'mock';
 
-    protected $adapter = null;
-    protected $parameterAnalyzer = null;
-    protected $reflectionClassFactory = null;
-    protected $shuntedMethods = [];
-    protected $overloadedMethods = [];
-    protected $orphanizedMethods = [];
-    protected $shuntParentClassCalls = false;
-    protected $allowUndefinedMethodsUsage = true;
-    protected $allIsInterface = false;
-    protected $testedClass = '';
-    protected $eachInstanceIsUnique = false;
-    protected $useStrictTypes = false;
+    protected ?atoum\adapter $adapter = null;
+    protected ?atoum\tools\parameter\analyzer $parameterAnalyzer = null;
+    protected ?\Closure $reflectionClassFactory = null;
+    protected array $shuntedMethods = [];
+    protected array $overloadedMethods = [];
+    protected array $orphanizedMethods = [];
+    protected bool $shuntParentClassCalls = false;
+    protected bool $allowUndefinedMethodsUsage = true;
+    protected bool $allIsInterface = false;
+    protected string $testedClass = '';
+    protected bool $eachInstanceIsUnique = false;
+    protected bool $useStrictTypes = false;
 
-    private $defaultNamespace = null;
+    private ?string $defaultNamespace = null;
 
     public function __construct()
     {
@@ -33,36 +33,36 @@ class generator
         ;
     }
 
-    public function callsToParentClassAreShunted()
+    public function callsToParentClassAreShunted(): bool
     {
         return $this->shuntParentClassCalls;
     }
 
-    public function setAdapter(?atoum\adapter $adapter = null)
+    public function setAdapter(?atoum\adapter $adapter = null): static
     {
         $this->adapter = $adapter ?: new atoum\adapter();
 
         return $this;
     }
 
-    public function getAdapter()
+    public function getAdapter(): atoum\adapter
     {
         return $this->adapter;
     }
 
-    public function setParameterAnalyzer(?atoum\tools\parameter\analyzer $analyzer = null)
+    public function setParameterAnalyzer(?atoum\tools\parameter\analyzer $analyzer = null): static
     {
         $this->parameterAnalyzer = $analyzer ?: new atoum\tools\parameter\analyzer();
 
         return $this;
     }
 
-    public function getParameterAnalyzer()
+    public function getParameterAnalyzer(): atoum\tools\parameter\analyzer
     {
         return $this->parameterAnalyzer;
     }
 
-    public function setReflectionClassFactory(?\closure $factory = null)
+    public function setReflectionClassFactory(?\Closure $factory = null): static
     {
         $this->reflectionClassFactory = $factory ?: function ($class) {
             return new \reflectionClass($class);
@@ -71,41 +71,41 @@ class generator
         return $this;
     }
 
-    public function getReflectionClassFactory()
+    public function getReflectionClassFactory(): \Closure
     {
         return $this->reflectionClassFactory;
     }
 
-    public function setDefaultNamespace($namespace)
+    public function setDefaultNamespace(string $namespace): static
     {
         $this->defaultNamespace = trim($namespace, '\\');
 
         return $this;
     }
 
-    public function getDefaultNamespace()
+    public function getDefaultNamespace(): string
     {
         return ($this->defaultNamespace === null ? self::defaultNamespace : $this->defaultNamespace);
     }
 
-    public function overload(php\method $method)
+    public function overload(php\method $method): static
     {
         $this->overloadedMethods[strtolower($method->getName())] = $method;
 
         return $this;
     }
 
-    public function isOverloaded($method)
+    public function isOverloaded(string $method): bool
     {
         return ($this->getOverload($method) !== null);
     }
 
-    public function getOverload($method)
+    public function getOverload(string $method): ?php\method
     {
         return (isset($this->overloadedMethods[$method = strtolower($method)]) === false ? null : $this->overloadedMethods[$method]);
     }
 
-    public function shunt($method)
+    public function shunt(string $method): static
     {
         if ($this->isShunted($method) === false) {
             $this->shuntedMethods[] = strtolower($method);
@@ -114,26 +114,26 @@ class generator
         return $this;
     }
 
-    public function isShunted($method)
+    public function isShunted(string $method): bool
     {
         return (in_array(strtolower($method), $this->shuntedMethods) === true);
     }
 
-    public function shuntParentClassCalls()
+    public function shuntParentClassCalls(): static
     {
         $this->shuntParentClassCalls = true;
 
         return $this;
     }
 
-    public function unshuntParentClassCalls()
+    public function unshuntParentClassCalls(): static
     {
         $this->shuntParentClassCalls = false;
 
         return $this;
     }
 
-    public function orphanize($method)
+    public function orphanize(string $method): static
     {
         if ($this->isOrphanized($method) === false) {
             $this->orphanizedMethods[] = strtolower($method);
@@ -142,40 +142,40 @@ class generator
         return $this->shunt($method);
     }
 
-    public function isOrphanized($method)
+    public function isOrphanized(string $method): bool
     {
         return (in_array($method, $this->orphanizedMethods) === true);
     }
 
-    public function allIsInterface()
+    public function allIsInterface(): static
     {
         $this->allIsInterface = true;
 
         return $this;
     }
 
-    public function eachInstanceIsUnique()
+    public function eachInstanceIsUnique(): static
     {
         $this->eachInstanceIsUnique = true;
 
         return $this;
     }
 
-    public function useStrictTypes()
+    public function useStrictTypes(): static
     {
         $this->useStrictTypes = true;
 
         return $this;
     }
 
-    public function testedClassIs($testedClass)
+    public function testedClassIs(string $testedClass): static
     {
         $this->testedClass = strtolower($testedClass);
 
         return $this;
     }
 
-    public function getMockedClassCode($class, $mockNamespace = null, $mockClass = null)
+    public function getMockedClassCode(string $class, ?string $mockNamespace = null, ?string $mockClass = null): string
     {
         if (trim($class, '\\') == '' || rtrim($class, '\\') != $class) {
             throw new exceptions\runtime('Class name \'' . $class . '\' is invalid');
@@ -214,14 +214,14 @@ class generator
         return $code;
     }
 
-    public function generate($class, $mockNamespace = null, $mockClass = null)
+    public function generate(string $class, ?string $mockNamespace = null, ?string $mockClass = null): static
     {
         eval($this->getMockedClassCode($class, $mockNamespace, $mockClass));
 
         return $this;
     }
 
-    public function methodIsMockable(\reflectionMethod $method)
+    public function methodIsMockable(\reflectionMethod $method): bool
     {
         switch (true) {
             case $method->isFinal():
@@ -238,41 +238,41 @@ class generator
         }
     }
 
-    public function disallowUndefinedMethodInInterface()
+    public function disallowUndefinedMethodInInterface(): static
     {
         return $this->disallowUndefinedMethodUsage();
     }
 
-    public function disallowUndefinedMethodUsage()
+    public function disallowUndefinedMethodUsage(): static
     {
         $this->allowUndefinedMethodsUsage = false;
 
         return $this;
     }
 
-    public function allowUndefinedMethodInInterface()
+    public function allowUndefinedMethodInInterface(): static
     {
         return $this->allowUndefinedMethodUsage();
     }
 
-    public function allowUndefinedMethodUsage()
+    public function allowUndefinedMethodUsage(): static
     {
         $this->allowUndefinedMethodsUsage = true;
 
         return $this;
     }
 
-    public function undefinedMethodInInterfaceAreAllowed()
+    public function undefinedMethodInInterfaceAreAllowed(): bool
     {
         return $this->undefinedMethodUsageIsAllowed();
     }
 
-    public function undefinedMethodUsageIsAllowed()
+    public function undefinedMethodUsageIsAllowed(): bool
     {
         return $this->allowUndefinedMethodsUsage === true;
     }
 
-    protected function generateClassMethodCode(\reflectionClass $class)
+    protected function generateClassMethodCode(\reflectionClass $class): string
     {
         $mockedMethods = '';
         $mockedMethodNames = [];
@@ -403,6 +403,7 @@ class generator
                     if ($this->hasReturnType($method) === true && $this->isVoid($method) === false) {
                         $returnType = $this->getReflectionType($method);
                         $returnTypeName = $this->getReflectionTypeName($returnType);
+                        $allowsNull = $returnType->allowsNull();
 
                         switch (true) {
                             case $returnTypeName === 'self':
@@ -413,7 +414,33 @@ class generator
                                 $mockedMethods .= "\t\t\t\t" . 'return $this;' . PHP_EOL;
                                 break;
 
+                            case $returnTypeName === 'bool':
+                                $mockedMethods .= "\t\t\t\t" . 'return false;' . PHP_EOL;
+                                break;
+
+                            case $returnTypeName === 'int':
+                                $mockedMethods .= "\t\t\t\t" . 'return 0;' . PHP_EOL;
+                                break;
+
+                            case $returnTypeName === 'float':
+                                $mockedMethods .= "\t\t\t\t" . 'return 0.0;' . PHP_EOL;
+                                break;
+
+                            case $returnTypeName === 'string':
+                                $mockedMethods .= "\t\t\t\t" . 'return \'\';' . PHP_EOL;
+                                break;
+
+                            case $returnTypeName === 'array':
+                                $mockedMethods .= "\t\t\t\t" . 'return [];' . PHP_EOL;
+                                break;
+
+                            case $returnTypeName === 'mixed':
+                            case $allowsNull:
+                                $mockedMethods .= "\t\t\t\t" . 'return null;' . PHP_EOL;
+                                break;
+
                             default:
+                                // Pour les objets non-nullables, retourner null (ce sera une erreur, mais explicite)
                                 $mockedMethods .= "\t\t\t\t" . 'return null;' . PHP_EOL;
                         }
                     }
@@ -454,6 +481,7 @@ class generator
                         if ($this->hasReturnType($method) === true && $this->isVoid($method) === false) {
                             $returnType = $this->getReflectionType($method);
                             $returnTypeName = $this->getReflectionTypeName($returnType);
+                            $allowsNull = $returnType->allowsNull();
 
                             switch (true) {
                                 case $returnTypeName === 'self':
@@ -462,6 +490,31 @@ class generator
                                 case $returnTypeName === $class->getName():
                                 case interface_exists($returnTypeName) && $class->implementsInterface($returnTypeName):
                                     $mockedMethods .= "\t\t\t" . 'return $this;' . PHP_EOL;
+                                    break;
+
+                                case $returnTypeName === 'bool':
+                                    $mockedMethods .= "\t\t\t" . 'return false;' . PHP_EOL;
+                                    break;
+
+                                case $returnTypeName === 'int':
+                                    $mockedMethods .= "\t\t\t" . 'return 0;' . PHP_EOL;
+                                    break;
+
+                                case $returnTypeName === 'float':
+                                    $mockedMethods .= "\t\t\t" . 'return 0.0;' . PHP_EOL;
+                                    break;
+
+                                case $returnTypeName === 'string':
+                                    $mockedMethods .= "\t\t\t" . 'return \'\';' . PHP_EOL;
+                                    break;
+
+                                case $returnTypeName === 'array':
+                                    $mockedMethods .= "\t\t\t" . 'return [];' . PHP_EOL;
+                                    break;
+
+                                case $returnTypeName === 'mixed':
+                                case $allowsNull:
+                                    $mockedMethods .= "\t\t\t" . 'return null;' . PHP_EOL;
                                     break;
 
                                 default:
@@ -485,25 +538,34 @@ class generator
         return $mockedMethods . self::generateGetMockedMethod($mockedMethodNames);
     }
 
-    protected function generateMethodSignature(\reflectionMethod $method)
+    protected function generateMethodSignature(\reflectionMethod $method): string
     {
         return ($method->isPublic() === true ? 'public' : 'protected') . ' function' . ($method->returnsReference() === false ? '' : ' &') . ' ' . $method->getName() . '(' . $this->getParametersSignature($method) . ')' . $this->getReturnType($method);
     }
 
-    protected function generateClassCode(\reflectionClass $class, $mockNamespace, $mockClass)
+    protected function generateClassCode(\reflectionClass $class, string $mockNamespace, string $mockClass): string
     {
+        // PHP 8.2+ : Check if class is readonly
+        $classModifiers = 'final ';
+        if (version_compare(PHP_VERSION, '8.2.0', '>=') && $class->isReadOnly()) {
+            $classModifiers .= 'readonly ';
+        }
+
         return ($this->useStrictTypes ? 'declare(strict_types=1);' . PHP_EOL : '') .
             'namespace ' . ltrim($mockNamespace, '\\') . ' {' . PHP_EOL .
-            'final class ' . $mockClass . ' extends \\' . $class->getName() . ' implements \\' . __NAMESPACE__ . '\\aggregator' . PHP_EOL .
+            $classModifiers . 'class ' . $mockClass . ' extends \\' . $class->getName() . ' implements \\' . __NAMESPACE__ . '\\aggregator' . PHP_EOL .
             '{' . PHP_EOL .
             self::generateMockControllerMethods() .
+            $this->generatePromotedProperties($class) .
+            $this->generatePropertiesWithHooks($class) .
+            $this->generatePropertiesWithAsymmetricVisibility($class) .
             $this->generateClassMethodCode($class) .
             '}' . PHP_EOL .
             '}'
         ;
     }
 
-    protected function generateInterfaceMethodCode(\reflectionClass $class, $addIteratorAggregate)
+    protected function generateInterfaceMethodCode(\reflectionClass $class, bool $addIteratorAggregate): string
     {
         $mockedMethods = '';
         $mockedMethodNames = [];
@@ -649,7 +711,7 @@ class generator
         ;
     }
 
-    protected function getNamespace($class)
+    protected function getNamespace(string $class): string
     {
         $class = ltrim($class, '\\');
         $lastAntiSlash = strrpos($class, '\\');
@@ -657,7 +719,7 @@ class generator
         return '\\' . $this->getDefaultNamespace() . ($lastAntiSlash === false ? '' : '\\' . substr($class, 0, $lastAntiSlash));
     }
 
-    protected function getReturnType(\reflectionMethod $method)
+    protected function getReturnType(\reflectionMethod $method): string
     {
         $returnTypeCode = '';
 
@@ -669,56 +731,68 @@ class generator
         $returnTypeName = $this->getReflectionTypeName($returnType);
         $isNullable = $returnType->allowsNull() === true;
 
-        switch (true) {
-            case $returnTypeName === 'self':
-                $returnTypeCode = ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getName();
-                break;
+        // Handle special cases: self, parent, static
+        if ($returnType instanceof \reflectionNamedType) {
+            switch ($returnTypeName) {
+                case 'self':
+                    return ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getName();
 
-            case $returnTypeName === 'parent':
-                $returnTypeCode = ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getParentClass()->getName();
-                break;
+                case 'parent':
+                    return ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getParentClass()->getName();
 
-            case $returnType instanceof \reflectionUnionType:
-                $types = [];
-                $declaringClass = $method->getDeclaringClass();
+                case 'static':
+                    return ': ' . ($isNullable ? '?' : '') . $returnTypeName;
 
-                foreach ($returnType->getTypes() as $type) {
-                    $typeName = $type->getName();
+                case 'mixed':
+                case 'void':
+                case 'never':
+                    // These types cannot be marked as nullable
+                    return ': ' . $returnTypeName;
 
-                    // Handle self, static, and parent in union types
-                    if ($typeName === 'self') {
-                        $types[] = '\\' . $declaringClass->getName();
-                    } elseif ($typeName === 'parent') {
-                        $parentClass = $declaringClass->getParentClass();
-                        $types[] = '\\' . $parentClass->getName();
-                    } elseif ($typeName === 'static') {
-                        $types[] = 'static';
-                    } else {
-                        $types[] = (!$type->isBuiltin() ? '\\' : '') . $typeName;
-                    }
-                }
-
-                $returnTypeCode = ': ' . implode('|', $types);
-                break;
-
-            case in_array($this->getReflectionTypeName($returnType), ['mixed', 'null']):
-                // 'mixed' and 'null' cannot be marked as nullable
-                $returnTypeCode = ': ' . $returnTypeName;
-                break;
-
-            case $returnTypeName === 'static':
-            case $returnType->isBuiltin():
-                $returnTypeCode = ': ' . ($isNullable ? '?' : '') . $returnTypeName;
-                break;
-
-            default:
-                $returnTypeCode = ': ' . ($isNullable ? '?' : '') . '\\' . $returnTypeName;
+                // PHP 8.2+: Standalone null, true, false types
+                case 'null':
+                case 'true':
+                case 'false':
+                    // These standalone types are returned as-is
+                    return ': ' . $returnTypeName;
+            }
         }
 
-        return $returnTypeCode;
+        // For complex types (Union, Intersection, DNF), use the generic formatter
+        if ($returnType instanceof \ReflectionUnionType
+            || (class_exists(\ReflectionIntersectionType::class) && $returnType instanceof \ReflectionIntersectionType)) {
+            $formattedType = $this->formatReflectionType($returnType, $method);
+            return $formattedType !== '' ? ': ' . $formattedType : '';
+        }
+
+        // Fallback for simple types (including mocked types and tentative return types)
+        // Handle special keywords
+        switch ($returnTypeName) {
+            case 'self':
+                return ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getName();
+
+            case 'parent':
+                return ': ' . ($isNullable ? '?' : '') . '\\' . $method->getDeclaringClass()->getParentClass()->getName();
+
+            case 'static':
+            case 'mixed':
+            case 'null':
+                return ': ' . ($isNullable && !in_array($returnTypeName, ['mixed', 'null']) ? '?' : '') . $returnTypeName;
+        }
+
+        // Check if it's a builtin type (either directly or from mocked ReflectionType)
+        $isBuiltinType = ($returnType instanceof \reflectionNamedType && $returnType->isBuiltin())
+                      || ($returnType->isBuiltin());
+
+        if ($isBuiltinType) {
+            return ': ' . ($isNullable ? '?' : '') . $returnTypeName;
+        }
+
+        // For non-builtin types (classes), add backslash
+        return ': ' . ($isNullable ? '?' : '') . '\\' . $returnTypeName;
     }
 
-    protected function hasReturnType(\reflectionMethod $method)
+    protected function hasReturnType(\reflectionMethod $method): bool
     {
         $hasReturnType = $method->hasReturnType() === true;
 
@@ -729,7 +803,7 @@ class generator
         return $hasReturnType;
     }
 
-    protected function getReflectionType(\reflectionMethod $method)
+    protected function getReflectionType(\reflectionMethod $method): ?\ReflectionType
     {
         if (!$this->hasReturnType($method)) {
             return null;
@@ -744,12 +818,12 @@ class generator
         return $returnType;
     }
 
-    protected function getReflectionTypeName(\reflectionType $type)
+    protected function getReflectionTypeName(\reflectionType $type): string
     {
         return $type instanceof \reflectionNamedType ? $type->getName() : (string) $type;
     }
 
-    protected function isVoid(\reflectionMethod $method)
+    protected function isVoid(\reflectionMethod $method): bool
     {
         return $this->hasReturnType($method) ? $this->getReflectionTypeName($this->getReflectionType($method)) === 'void' : false;
     }
@@ -761,7 +835,7 @@ class generator
                null === $parameter->getDefaultValue();
     }
 
-    protected function getParameters(\reflectionMethod $method)
+    protected function getParameters(\reflectionMethod $method): array
     {
         $parameters = [];
 
@@ -780,7 +854,7 @@ class generator
         return $parameters;
     }
 
-    protected function getParametersSignature(\reflectionMethod $method, $forceMockController = false)
+    protected function getParametersSignature(\reflectionMethod $method, bool $forceMockController = false): string
     {
         $parameters = [];
 
@@ -811,7 +885,7 @@ class generator
         return implode(', ', $parameters);
     }
 
-    protected function canCallParent()
+    protected function canCallParent(): bool
     {
         return $this->shuntParentClassCalls === false && $this->allIsInterface === false;
     }
@@ -838,7 +912,7 @@ class generator
     protected static function generateMockControllerMethods()
     {
         return
-            "\t" . 'public function getMockController()' . PHP_EOL .
+            "\t" . 'public function getMockController(): \atoum\atoum\mock\controller' . PHP_EOL .
             "\t" . '{' . PHP_EOL .
             "\t\t" . '$mockController = \atoum\atoum\mock\controller::getForMock($this);' . PHP_EOL .
             "\t\t" . 'if ($mockController === null)' . PHP_EOL .
@@ -847,11 +921,12 @@ class generator
             "\t\t" . '}' . PHP_EOL .
             "\t\t" . 'return $mockController;' . PHP_EOL .
             "\t" . '}' . PHP_EOL .
-            "\t" . 'public function setMockController(\\' . __NAMESPACE__ . '\\controller $controller)' . PHP_EOL .
+            "\t" . 'public function setMockController(\\' . __NAMESPACE__ . '\\controller $controller): static' . PHP_EOL .
             "\t" . '{' . PHP_EOL .
-            "\t\t" . 'return $controller->control($this);' . PHP_EOL .
+            "\t\t" . '$controller->control($this);' . PHP_EOL .
+            "\t\t" . 'return $this;' . PHP_EOL .
             "\t" . '}' . PHP_EOL .
-            "\t" . 'public function resetMockController()' . PHP_EOL .
+            "\t" . 'public function resetMockController(): static' . PHP_EOL .
             "\t" . '{' . PHP_EOL .
             "\t\t" . '\atoum\atoum\mock\controller::getForMock($this)->reset();' . PHP_EOL .
             "\t\t" . 'return $this;' . PHP_EOL .
@@ -916,7 +991,7 @@ class generator
     protected static function generateGetMockedMethod(array $mockedMethodNames)
     {
         return
-            "\t" . 'public static function getMockedMethods()' . PHP_EOL .
+            "\t" . 'public static function getMockedMethods(): array' . PHP_EOL .
             "\t" . '{' . PHP_EOL .
             "\t\t" . 'return ' . var_export($mockedMethodNames, true) . ';' . PHP_EOL .
             "\t" . '}' . PHP_EOL
@@ -938,7 +1013,7 @@ class generator
         ;
     }
 
-    protected static function methodNameIsReservedWord(\reflectionMethod $method)
+    protected static function methodNameIsReservedWord(\reflectionMethod $method): bool
     {
         return in_array($method->getName(), self::getMethodNameReservedWordByVersion(), true);
     }
@@ -1021,5 +1096,332 @@ class generator
     private static function generateUniqueId()
     {
         return "\t\t" . '$this->{\'mock\' . uniqid()} = true;' . PHP_EOL;
+    }
+
+    /**
+     * Generate promoted properties from constructor (PHP 8.0+)
+     */
+    protected function generatePromotedProperties(\ReflectionClass $class): string
+    {
+        $propertiesCode = '';
+
+        $constructor = $class->getConstructor();
+        if ($constructor === null) {
+            return '';
+        }
+
+        // In PHP 8.2+, if the class is readonly, all properties are implicitly readonly
+        // and inherited. We should NOT redeclare them to avoid "Cannot redeclare readonly property" error
+        $isReadonlyClass = version_compare(PHP_VERSION, '8.2.0', '>=') && $class->isReadOnly();
+        if ($isReadonlyClass) {
+            return '';
+        }
+
+        foreach ($constructor->getParameters() as $parameter) {
+            if (version_compare(PHP_VERSION, '8.0.0', '>=') && $parameter->isPromoted()) {
+                // In PHP 8.4+, readonly promoted properties automatically get asymmetric visibility
+                // and will be handled by generatePropertiesWithAsymmetricVisibility() instead
+                // Redeclaring them here would cause "Cannot redeclare readonly property" error
+                if (version_compare(PHP_VERSION, '8.4.0', '>=')) {
+                    $reflector = $parameter->getDeclaringFunction()->getDeclaringClass();
+                    $property = $reflector->getProperty($parameter->getName());
+                    
+                    if ($property->isReadOnly()) {
+                        // Skip readonly promoted properties in PHP 8.4+ (handled elsewhere)
+                        continue;
+                    }
+                }
+                
+                $propertiesCode .= $this->generatePromotedProperty($parameter);
+            }
+        }
+
+        return $propertiesCode;
+    }
+
+    /**
+     * Generate code for a single promoted property
+     */
+    protected function generatePromotedProperty(\ReflectionParameter $parameter): string
+    {
+        $propertyName = $parameter->getName();
+
+        // Get the property from the class to determine visibility
+        $reflector = $parameter->getDeclaringFunction()->getDeclaringClass();
+        $property = $reflector->getProperty($propertyName);
+
+        $visibility = 'public';
+        if ($property->isProtected()) {
+            $visibility = 'protected';
+        } elseif ($property->isPrivate()) {
+            $visibility = 'private';
+        }
+
+        // Check if readonly (PHP 8.1+)
+        $readonly = '';
+        if (version_compare(PHP_VERSION, '8.1.0', '>=') && $property->isReadOnly()) {
+            $readonly = 'readonly ';
+        }
+
+        // Get property type
+        $typeHint = '';
+        if ($property->hasType()) {
+            $typeHint = $this->getPropertyType($property);
+            if ($typeHint !== '') {
+                $typeHint .= ' ';
+            }
+        }
+
+        return "\t" . $visibility . ' ' . $readonly . $typeHint . '$' . $propertyName . ';' . PHP_EOL;
+    }
+
+    /**
+     * Check if a property has hooks (PHP 8.4+)
+     * Note: Caller must ensure PHP version >= 8.4
+     */
+    protected function hasPropertyHooks(\ReflectionProperty $property): bool
+    {
+        $hooks = $property->getHooks();
+        return !empty($hooks);
+    }
+
+    /**
+     * Generate code for properties with hooks
+     */
+    protected function generatePropertiesWithHooks(\ReflectionClass $class): string
+    {
+        if (version_compare(PHP_VERSION, '8.4.0', '<')) {
+            return '';
+        }
+
+        $propertiesCode = '';
+
+        try {
+            foreach ($class->getProperties() as $property) {
+                if ($this->hasPropertyHooks($property)) {
+                    $propertiesCode .= $this->generatePropertyWithHook($class, $property);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignore errors when getting properties (e.g., mocked ReflectionClass on PHP 8.4+)
+        }
+
+        return $propertiesCode;
+    }
+
+    /**
+     * Generate code for a single property with hooks
+     */
+    protected function generatePropertyWithHook(\ReflectionClass $class, \ReflectionProperty $property): string
+    {
+        $propertyName = $property->getName();
+        $visibility = $this->getPropertyVisibility($property);
+
+        // Get property type if available
+        $typeHint = $this->getPropertyType($property);
+        if ($typeHint !== '') {
+            $typeHint .= ' ';
+        }
+
+        $code = "\t" . $visibility . ' ' . $typeHint . '$' . $propertyName . ' {' . PHP_EOL;
+
+        // Generate hooks
+        $hooks = $property->getHooks();
+
+        // Note: hooks array uses string keys 'get' and 'set', not constants
+        if (isset($hooks['get'])) {
+            $code .= "\t\t" . 'get {' . PHP_EOL;
+            $code .= "\t\t\t" . 'return $this->getMockController()->invoke(\'__get_' . $propertyName . '\', []);' . PHP_EOL;
+            $code .= "\t\t" . '}' . PHP_EOL;
+        }
+
+        if (isset($hooks['set'])) {
+            // For set hook, parameter type must match property type
+            $code .= "\t\t" . 'set(' . $typeHint . '$value) {' . PHP_EOL;
+            $code .= "\t\t\t" . '$this->getMockController()->invoke(\'__set_' . $propertyName . '\', [$value]);' . PHP_EOL;
+            $code .= "\t\t" . '}' . PHP_EOL;
+        }
+
+        $code .= "\t" . '}' . PHP_EOL . PHP_EOL;
+
+        return $code;
+    }
+
+    /**
+     * Get property type as string for code generation
+     * Supports: Named types, Union types, Intersection types (PHP 8.1+), DNF types (PHP 8.2+)
+     */
+    protected function getPropertyType(\ReflectionProperty $property): string
+    {
+        if (!$property->hasType()) {
+            return '';
+        }
+
+        $type = $property->getType();
+
+        return $this->formatReflectionType($type);
+    }
+
+    /**
+     * Format a ReflectionType into a string representation
+     * Handles: NamedType, UnionType, IntersectionType (PHP 8.1+), and DNF types (PHP 8.2+)
+     */
+    protected function formatReflectionType(\ReflectionType $type, ?\reflectionMethod $method = null): string
+    {
+        // PHP 8.0+: Named types
+        if ($type instanceof \ReflectionNamedType) {
+            $typeName = $type->getName();
+            
+            // Handle special keywords: self, parent, static
+            if ($method !== null) {
+                $declaringClass = $method->getDeclaringClass();
+                
+                if ($typeName === 'self') {
+                    $typeName = $declaringClass->getName();
+                } elseif ($typeName === 'parent') {
+                    $parentClass = $declaringClass->getParentClass();
+                    $typeName = $parentClass->getName();
+                } elseif ($typeName === 'static') {
+                    // 'static' is kept as-is (late static binding)
+                    $nullable = $type->allowsNull() && $typeName !== 'mixed' && $typeName !== 'null' ? '?' : '';
+                    return $nullable . $typeName;
+                }
+            }
+            
+            $nullable = $type->allowsNull() && $typeName !== 'mixed' && $typeName !== 'null' ? '?' : '';
+            
+            // Handle special keyword types: self, parent, static
+            // These must NEVER have a backslash prefix
+            if (in_array($typeName, ['self', 'parent', 'static'])) {
+                return $nullable . $typeName;
+            }
+            
+            return $nullable . (!$type->isBuiltin() ? '\\' : '') . $typeName;
+        }
+
+        // PHP 8.0+: Union types
+        if ($type instanceof \ReflectionUnionType) {
+            $types = array_map(
+                function ($t) use ($method) {
+                    return $this->formatReflectionType($t, $method);
+                },
+                $type->getTypes()
+            );
+            return implode('|', $types);
+        }
+
+        // PHP 8.1+: Intersection types
+        if (class_exists(\ReflectionIntersectionType::class) && $type instanceof \ReflectionIntersectionType) {
+            $types = array_map(
+                function ($t) use ($method) {
+                    // For intersection types within DNF, we may need parentheses
+                    $formatted = $this->formatReflectionType($t, $method);
+                    // If the formatted type contains a union (|), wrap in parentheses
+                    if (strpos($formatted, '|') !== false) {
+                        return '(' . $formatted . ')';
+                    }
+                    return $formatted;
+                },
+                $type->getTypes()
+            );
+            return implode('&', $types);
+        }
+
+        return '';
+    }
+
+    /**
+     * Check if a property has asymmetric visibility (PHP 8.4+)
+     * Note: Caller must ensure PHP version >= 8.4
+     */
+    protected function hasAsymmetricVisibility(\ReflectionProperty $property): bool
+    {
+        // Get read visibility
+        $isPublicRead = $property->isPublic();
+        $isProtectedRead = $property->isProtected();
+        $isPrivateRead = $property->isPrivate();
+
+        // Get write visibility
+        $isProtectedWrite = $property->isProtectedSet();
+        $isPrivateWrite = $property->isPrivateSet();
+
+        // If read and write visibilities differ, it's asymmetric
+        if ($isPublicRead && ($isProtectedWrite || $isPrivateWrite)) {
+            return true;
+        }
+        if ($isProtectedRead && $isPrivateWrite) {
+            return true;
+        }
+        // Private read can't have more restrictive write visibility
+        
+        return false;
+    }
+
+    /**
+     * Get property visibility declaration including asymmetric visibility (PHP 8.4+)
+     */
+    protected function getPropertyVisibility(\ReflectionProperty $property): string
+    {
+        $readVisibility = $property->isPublic() ? 'public' :
+                         ($property->isProtected() ? 'protected' : 'private');
+
+        // Check for asymmetric visibility (PHP 8.4+)
+        if ($this->hasAsymmetricVisibility($property)) {
+            $writeVisibility = $property->isProtectedSet() ? 'protected' : 'private';
+
+            return $readVisibility . ' ' . $writeVisibility . '(set)';
+        }
+
+        return $readVisibility;
+    }
+
+    /**
+     * Generate code for properties with asymmetric visibility
+     */
+    protected function generatePropertiesWithAsymmetricVisibility(\ReflectionClass $class): string
+    {
+        if (version_compare(PHP_VERSION, '8.4.0', '<')) {
+            return '';
+        }
+
+        $propertiesCode = '';
+
+        try {
+            foreach ($class->getProperties() as $property) {
+                if ($this->hasAsymmetricVisibility($property) && !$this->hasPropertyHooks($property)) {
+                    $propertiesCode .= $this->generatePropertyWithAsymmetricVisibility($property);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignore errors when getting properties (e.g., mocked ReflectionClass on PHP 8.4+)
+        }
+
+        return $propertiesCode;
+    }
+
+    /**
+     * Generate code for a single property with asymmetric visibility
+     */
+    protected function generatePropertyWithAsymmetricVisibility(\ReflectionProperty $property): string
+    {
+        $propertyName = $property->getName();
+        $visibility = $this->getPropertyVisibility($property);
+
+        // Check if readonly (PHP 8.1+)
+        $readonly = '';
+        if (version_compare(PHP_VERSION, '8.1.0', '>=') && $property->isReadOnly()) {
+            $readonly = 'readonly ';
+        }
+
+        // Get property type if available
+        $typeHint = $this->getPropertyType($property);
+        if ($typeHint !== '') {
+            $typeHint .= ' ';
+        }
+
+        // For mocked properties with asymmetric visibility, we need to maintain the same visibility
+        $code = "\t" . $visibility . ' ' . $readonly . $typeHint . '$' . $propertyName . ';' . PHP_EOL;
+
+        return $code;
     }
 }

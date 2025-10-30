@@ -1831,7 +1831,7 @@ abstract class test implements observable, \countable
 
     private function checkMethod($methodName)
     {
-        if (isset($this->testMethods[$methodName]) === false) {
+        if ($methodName === null || isset($this->testMethods[$methodName]) === false) {
             throw new exceptions\logic\invalidArgument('Test method ' . $this->class . '::' . $methodName . '() does not exist');
         }
 
