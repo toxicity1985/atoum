@@ -5,6 +5,7 @@ namespace atoum\atoum\tests\units\mock;
 use atoum\atoum;
 use atoum\atoum\mock;
 use atoum\atoum\mock\generator as testedClass;
+use atoum\atoum\attributes\Php;
 use atoum\atoum\test\adapter\call\decorators;
 
 require_once __DIR__ . '/../../runner.php';
@@ -2635,7 +2636,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.2 */
+    #[Php('8.2')]
     public function testGetMockedClassCodeForMethodWithNullReturnType()
     {
         $this
@@ -2731,7 +2732,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.2 */
+    #[Php('8.2')]
     public function testGetMockedClassCodeForMethodWithNullableTrueReturnType()
     {
         $this
@@ -2827,7 +2828,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.2 */
+    #[Php('8.2')]
     public function testGetMockedClassCodeForMethodWithFalseReturnType()
     {
         $this
@@ -3169,7 +3170,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.1 */
+    #[Php('8.1')]
     public function testGetMockedClassCodeForMethodWithTentativeReturnType()
     {
         $this
@@ -3333,7 +3334,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.4 */
+    #[Php('8.4')]
     public function testGetMockedClassCodeWithPropertyHooks()
     {
         $this
@@ -3360,7 +3361,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.4 */
+    #[Php('8.4')]
     public function testMockedPropertyHooksAreCallable()
     {
         $this
@@ -3389,7 +3390,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.4 */
+    #[Php('8.4')]
     public function testGetMockedClassCodeWithAsymmetricVisibility()
     {
         $this
@@ -3411,7 +3412,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.4 */
+    #[Php('8.4')]
     public function testMockedClassWithAsymmetricVisibilityIsReadOnly()
     {
         $this
@@ -3438,7 +3439,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.4 */
+    #[Php('8.4')]
     public function testGetMockedClassCodeWithDeprecatedMethods()
     {
         $this
@@ -3457,7 +3458,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.4 */
+    #[Php('8.4')]
     public function testMockingDeprecatedMethod()
     {
         $this
@@ -3483,7 +3484,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.4 */
+    #[Php('8.4')]
     public function testMockingClassWithDeprecatedConstants()
     {
         $this
@@ -3510,7 +3511,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.0 */
+    #[Php('8.0')]
     public function testGetMockedClassCodeWithPromotedProperties()
     {
         $this
@@ -3529,7 +3530,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.0 */
+    #[Php('8.0')]
     public function testMockedClassWithPromotedPropertiesIsAccessible()
     {
         $this
@@ -3552,7 +3553,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.0 */
+    #[Php('8.0')]
     public function testMockedClassWithMixedPromotedAndRegularProperties()
     {
         $this
@@ -3566,7 +3567,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.1 */
+    #[Php('8.1')]
     public function testGetMockedClassCodeWithReadonlyProperties()
     {
         $this
@@ -3584,7 +3585,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.1 */
+    #[Php('8.1')]
     public function testMockedClassWithReadonlyPropertiesPreservesImmutability()
     {
         $this
@@ -3607,7 +3608,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.1 */
+    #[Php('8.1')]
     public function testGetMockedClassCodeWithIntersectionTypes()
     {
         $this
@@ -3623,7 +3624,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.2 */
+    #[Php('8.2')]
     public function testGetMockedClassCodeWithReadonlyClass()
     {
         $this
@@ -3637,7 +3638,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.2 */
+    #[Php('8.2')]
     public function testMockedReadonlyClassIsImmutable()
     {
         $this
@@ -3660,7 +3661,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.2 */
+    #[Php('8.2')]
     public function testGetMockedClassCodeWithDnfTypes()
     {
         $this
@@ -3675,7 +3676,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.2 */
+    #[Php('8.2')]
     public function testGetMockedClassCodeWithStandaloneTypes()
     {
         $this
@@ -3692,7 +3693,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.2 */
+    #[Php('8.2')]
     public function testMockedClassWithTraitConstants()
     {
         $this
@@ -3712,7 +3713,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.3 */
+    #[Php('8.3')]
     public function testGetMockedClassCodeWithOverrideAttribute()
     {
         $this
@@ -3728,7 +3729,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.3 */
+    #[Php('8.3')]
     public function testMockingClassWithOverrideAttribute()
     {
         $this
@@ -3753,7 +3754,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.3 */
+    #[Php('8.3')]
     public function testGetMockedClassCodeWithTypedConstants()
     {
         $this
@@ -3768,7 +3769,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.3 */
+    #[Php('8.3')]
     public function testMockingClassWithTypedConstants()
     {
         $this
@@ -3796,7 +3797,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.3 */
+    #[Php('8.3')]
     public function testGetMockedInterfaceCodeWithTypedConstants()
     {
         $this
@@ -3810,7 +3811,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.3 */
+    #[Php('8.3')]
     public function testMockingInterfaceWithTypedConstants()
     {
         $this
@@ -3831,7 +3832,7 @@ class generator extends atoum\test
         ;
     }
 
-    /** @php >= 8.3 */
+    #[Php('8.3')]
     public function testMockingClassImplementingTypedConstants()
     {
         $this

@@ -4,8 +4,7 @@ namespace atoum\atoum\tests\units\reports;
 
 require __DIR__ . '/../../runner.php';
 
-use atoum\atoum
-;
+use atoum\atoum;
 
 class asynchronous extends atoum\test
 {

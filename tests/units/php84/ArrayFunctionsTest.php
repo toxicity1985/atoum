@@ -4,12 +4,13 @@ namespace atoum\atoum\tests\units\php84;
 
 use atoum\atoum;
 use atoum\atoum\tests\units\php84\fixtures\ArrayFunctions;
+use atoum\atoum\attributes\Php;
 
 /**
  * Tests for PHP 8.4 Array Functions
  *
- * @php >= 8.4
  */
+#[Php('8.4')]
 class ArrayFunctionsTest extends atoum
 {
     public function testFindFirstUser()

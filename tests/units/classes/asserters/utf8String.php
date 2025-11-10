@@ -6,10 +6,11 @@ use atoum\atoum;
 use atoum\atoum\asserter;
 use atoum\atoum\asserters;
 use atoum\atoum\tools\variable;
+use atoum\atoum\attributes as Attributes;
 
 require_once __DIR__ . '/../../runner.php';
 
-/** @extensions mbstring */
+#[Attributes\Extensions('mbstring')]
 class utf8String extends atoum\test
 {
     public function testClass()

@@ -8,12 +8,13 @@ use atoum\atoum\tests\units\php84\fixtures\ExpensiveService;
 use atoum\atoum\tests\units\php84\fixtures\LazyObjectFactory;
 use atoum\atoum\tests\units\php84\fixtures\UserRepository;
 use atoum\atoum\tests\units\php84\fixtures\ServiceContainer;
+use atoum\atoum\attributes\Php;
 
 /**
  * Tests for PHP 8.4 Lazy Objects
  *
- * @php >= 8.4
  */
+#[Php('8.4')]
 class LazyObjectsTest extends atoum
 {
     public function testLazyGhostIsNotInitializedUntilAccess(): void

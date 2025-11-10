@@ -118,6 +118,8 @@ abstract class test implements observable, \countable
 
         $this->setClassAnnotations($annotationExtractor);
 
+        $this->applyClassAttributes($class);
+
         $annotationExtractor->extract($class->getDocComment());
 
         if ($this->testNamespace === null || $this->testMethodPrefix === null) {
@@ -160,6 +162,8 @@ abstract class test implements observable, \countable
 
             if ($testMethodFilter($methodName) == true) {
                 $this->testMethods[$methodName] = [];
+
+                $this->applyMethodAttributes($publicMethod);
 
                 $annotationExtractor->extract($publicMethod->getDocComment());
 
@@ -1547,8 +1551,10 @@ abstract class test implements observable, \countable
 
         if ($errorReporting & $errno) {
             list($file, $line) = $this->getBacktrace();
+            $resolvedFile = $file ?: ($errfile ?: $this->path);
+            $resolvedLine = $line ?? $errline ?? 0;
 
-            $this->score->addError($file ?: ($errfile ?: $this->path), $this->class, $this->currentMethod, $line ?: $errline, $errno, trim($errstr), $errfile, $errline);
+            $this->score->addError($resolvedFile, $this->class, $this->currentMethod, $resolvedLine, $errno, trim($errstr), $errfile, $errline);
 
             $doNotCallDefaultErrorHandler = !($errno & E_RECOVERABLE_ERROR);
         }
@@ -1665,37 +1671,208 @@ abstract class test implements observable, \countable
         return trim($testedClassName, '\\');
     }
 
+    protected function applyClassAttributes(\ReflectionClass $class): void
+    {
+        foreach ($class->getAttributes(attributes\Php::class) as $attribute) {
+            $php = $attribute->newInstance();
+            $this->addClassPhpVersion($php->version, $php->operator);
+        }
+
+        foreach ($class->getAttributes(attributes\Ignore::class) as $attribute) {
+            $this->ignore($attribute->newInstance()->value);
+        }
+
+        $classTags = [];
+        foreach ($class->getAttributes(attributes\Tags::class) as $attribute) {
+            $classTags = array_merge($classTags, $attribute->newInstance()->tags);
+        }
+        if ($classTags !== []) {
+            $this->setTags($classTags);
+        }
+
+        foreach ($class->getAttributes(attributes\TestNamespace::class) as $attribute) {
+            $value = $attribute->newInstance()->value;
+            $this->setTestNamespace($value ?? static::defaultNamespace);
+        }
+
+        foreach ($class->getAttributes(attributes\TestMethodPrefix::class) as $attribute) {
+            $this->setTestMethodPrefix($attribute->newInstance()->value);
+        }
+
+        foreach ($class->getAttributes(attributes\MaxChildrenNumber::class) as $attribute) {
+            $this->setMaxChildrenNumber($attribute->newInstance()->value);
+        }
+
+        foreach ($class->getAttributes(attributes\Engine::class) as $attribute) {
+            $this->setClassEngine($attribute->newInstance()->value);
+        }
+
+        foreach ($class->getAttributes(attributes\Extensions::class) as $attribute) {
+            foreach ($attribute->newInstance()->extensions as $extension) {
+                $this->addMandatoryClassExtension($extension);
+            }
+        }
+
+        foreach ($class->getAttributes(attributes\Os::class) as $attribute) {
+            foreach ($attribute->newInstance()->os as $os) {
+                $this->addClassSupportedOs($os);
+            }
+        }
+
+        if ($class->getAttributes(attributes\HasVoidMethods::class) !== []) {
+            $this->classHasVoidMethods();
+        }
+
+        if ($class->getAttributes(attributes\HasNotVoidMethods::class) !== []) {
+            $this->classHasNotVoidMethods();
+        }
+    }
+
+    protected function applyMethodAttributes(\ReflectionMethod $method): void
+    {
+        $methodName = $method->getName();
+
+        foreach ($method->getAttributes(attributes\Php::class) as $attribute) {
+            $php = $attribute->newInstance();
+            $this->addMethodPhpVersion($methodName, $php->version, $php->operator);
+        }
+
+        foreach ($method->getAttributes(attributes\Ignore::class) as $attribute) {
+            $this->ignoreMethod($methodName, $attribute->newInstance()->value);
+        }
+
+        $methodTags = [];
+        foreach ($method->getAttributes(attributes\Tags::class) as $attribute) {
+            $methodTags = array_merge($methodTags, $attribute->newInstance()->tags);
+        }
+        if ($methodTags !== []) {
+            $this->setMethodTags($methodName, $methodTags);
+        }
+
+        foreach ($method->getAttributes(attributes\DataProvider::class) as $attribute) {
+            $this->setDataProvider($methodName, $attribute->newInstance()->value);
+        }
+
+        foreach ($method->getAttributes(attributes\Engine::class) as $attribute) {
+            $this->setMethodEngine($methodName, $attribute->newInstance()->value);
+        }
+
+        if ($method->getAttributes(attributes\IsVoid::class) !== []) {
+            $this->setMethodVoid($methodName);
+        }
+
+        if ($method->getAttributes(attributes\IsNotVoid::class) !== []) {
+            $this->setMethodNotVoid($methodName);
+        }
+
+        foreach ($method->getAttributes(attributes\Extensions::class) as $attribute) {
+            foreach ($attribute->newInstance()->extensions as $extension) {
+                $this->addMandatoryMethodExtension($methodName, $extension);
+            }
+        }
+
+        foreach ($method->getAttributes(attributes\Os::class) as $attribute) {
+            foreach ($attribute->newInstance()->os as $os) {
+                $this->addMethodSupportedOs($methodName, $os);
+            }
+        }
+    }
+
     protected function setClassAnnotations(annotations\extractor $extractor)
     {
         $extractor
             ->resetHandlers()
             ->setHandler('ignore', function ($value) {
+                @trigger_error(
+                    sprintf(
+                        'Using @ignore annotation on %s is deprecated; use #[\atoum\atoum\attributes\Ignore] instead.',
+                        $this->class
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->ignore(annotations\extractor::toBoolean($value));
             })
             ->setHandler('tags', function ($value) {
+                @trigger_error(
+                    sprintf(
+                        'Using @tags annotation on %s is deprecated; use #[\atoum\atoum\attributes\Tags] instead.',
+                        $this->class
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->setTags(annotations\extractor::toArray($value));
             })
             ->setHandler('namespace', function ($value) {
+                @trigger_error(
+                    sprintf(
+                        'Using @namespace annotation on %s is deprecated; use #[\atoum\atoum\attributes\TestNamespace] instead.',
+                        $this->class
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->setTestNamespace($value === true ? static::defaultNamespace : $value);
             })
             ->setHandler('methodPrefix', function ($value) {
+                @trigger_error(
+                    sprintf(
+                        'Using @methodPrefix annotation on %s is deprecated; use #[\atoum\atoum\attributes\TestMethodPrefix] instead.',
+                        $this->class
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->setTestMethodPrefix($value === true ? static::defaultMethodPrefix : $value);
             })
             ->setHandler('maxChildrenNumber', function ($value) {
+                @trigger_error(
+                    sprintf(
+                        'Using @maxChildrenNumber annotation on %s is deprecated; use #[\atoum\atoum\attributes\MaxChildrenNumber] instead.',
+                        $this->class
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->setMaxChildrenNumber($value);
             })
             ->setHandler('engine', function ($value) {
+                @trigger_error(
+                    sprintf(
+                        'Using @engine annotation on %s is deprecated; use #[\atoum\atoum\attributes\Engine] instead.',
+                        $this->class
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->setClassEngine($value);
             })
             ->setHandler('hasVoidMethods', function ($value) {
+                @trigger_error(
+                    sprintf(
+                        'Using @hasVoidMethods annotation on %s is deprecated; use #[\atoum\atoum\attributes\HasVoidMethods] instead.',
+                        $this->class
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->classHasVoidMethods();
             })
             ->setHandler('hasNotVoidMethods', function ($value) {
+                @trigger_error(
+                    sprintf(
+                        'Using @hasNotVoidMethods annotation on %s is deprecated; use #[\atoum\atoum\attributes\HasNotVoidMethods] instead.',
+                        $this->class
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->classHasNotVoidMethods();
             })
             ->setHandler(
                 'php',
                 function ($value) {
+                    @trigger_error(
+                        sprintf(
+                            'Using @php annotation on %s is deprecated; use #[\atoum\atoum\attributes\Php] instead.',
+                            $this->class
+                        ),
+                        E_USER_DEPRECATED
+                    );
+
                     $value = annotations\extractor::toArray($value);
 
                     if (isset($value[0]) === true) {
@@ -1724,12 +1901,26 @@ abstract class test implements observable, \countable
             ->setHandler(
                 'extensions',
                 function ($value) {
+                    @trigger_error(
+                        sprintf(
+                            'Using @extensions annotation on %s is deprecated; use #[\atoum\atoum\attributes\Extensions] instead.',
+                            $this->class
+                        ),
+                        E_USER_DEPRECATED
+                    );
                     foreach (annotations\extractor::toArray($value) as $mandatoryExtension) {
                         $this->addMandatoryClassExtension($mandatoryExtension);
                     }
                 }
             )
             ->setHandler('os', function ($value) {
+                @trigger_error(
+                    sprintf(
+                        'Using @os annotation on %s is deprecated; use #[\atoum\atoum\attributes\Os] instead.',
+                        $this->class
+                    ),
+                    E_USER_DEPRECATED
+                );
                 foreach (annotations\extractor::toArray($value) as $supportedOs) {
                     $this->addClassSupportedOs($supportedOs);
                 }
@@ -1743,26 +1934,83 @@ abstract class test implements observable, \countable
         $extractor
             ->resetHandlers()
             ->setHandler('ignore', function ($value) use (& $methodName) {
+                @trigger_error(
+                    sprintf(
+                        'Using @ignore annotation on %s::%s() is deprecated; use #[\atoum\atoum\attributes\Ignore] instead.',
+                        $this->class,
+                        $methodName
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->ignoreMethod($methodName, annotations\extractor::toBoolean($value));
             })
             ->setHandler('tags', function ($value) use (& $methodName) {
+                @trigger_error(
+                    sprintf(
+                        'Using @tags annotation on %s::%s() is deprecated; use #[\atoum\atoum\attributes\Tags] instead.',
+                        $this->class,
+                        $methodName
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->setMethodTags($methodName, annotations\extractor::toArray($value));
             })
             ->setHandler('dataProvider', function ($value) use (& $methodName) {
+                @trigger_error(
+                    sprintf(
+                        'Using @dataProvider annotation on %s::%s() is deprecated; use #[\atoum\atoum\attributes\DataProvider] instead.',
+                        $this->class,
+                        $methodName
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->setDataProvider($methodName, $value === true ? null : $value);
             })
             ->setHandler('engine', function ($value) use (& $methodName) {
+                @trigger_error(
+                    sprintf(
+                        'Using @engine annotation on %s::%s() is deprecated; use #[\atoum\atoum\attributes\Engine] instead.',
+                        $this->class,
+                        $methodName
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->setMethodEngine($methodName, $value);
             })
             ->setHandler('isVoid', function ($value) use (& $methodName) {
+                @trigger_error(
+                    sprintf(
+                        'Using @isVoid annotation on %s::%s() is deprecated; use #[\atoum\atoum\attributes\IsVoid] instead.',
+                        $this->class,
+                        $methodName
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->setMethodVoid($methodName);
             })
             ->setHandler('isNotVoid', function ($value) use (& $methodName) {
+                @trigger_error(
+                    sprintf(
+                        'Using @isNotVoid annotation on %s::%s() is deprecated; use #[\atoum\atoum\attributes\IsNotVoid] instead.',
+                        $this->class,
+                        $methodName
+                    ),
+                    E_USER_DEPRECATED
+                );
                 $this->setMethodNotVoid($methodName);
             })
             ->setHandler(
                 'php',
                 function ($value) use (& $methodName) {
+                    @trigger_error(
+                        sprintf(
+                            'Using @php annotation on %s::%s() is deprecated; use #[\atoum\atoum\attributes\Php] instead.',
+                            $this->class,
+                            $methodName
+                        ),
+                        E_USER_DEPRECATED
+                    );
+
                     $value = annotations\extractor::toArray($value);
 
                     if (isset($value[0]) === true) {
@@ -1791,12 +2039,28 @@ abstract class test implements observable, \countable
             ->setHandler(
                 'extensions',
                 function ($value) use (& $methodName) {
+                    @trigger_error(
+                        sprintf(
+                            'Using @extensions annotation on %s::%s() is deprecated; use #[\atoum\atoum\attributes\Extensions] instead.',
+                            $this->class,
+                            $methodName
+                        ),
+                        E_USER_DEPRECATED
+                    );
                     foreach (annotations\extractor::toArray($value) as $mandatoryExtension) {
                         $this->addMandatoryMethodExtension($methodName, $mandatoryExtension);
                     }
                 }
             )
             ->setHandler('os', function ($value) use (& $methodName) {
+                @trigger_error(
+                    sprintf(
+                        'Using @os annotation on %s::%s() is deprecated; use #[\atoum\atoum\attributes\Os] instead.',
+                        $this->class,
+                        $methodName
+                    ),
+                    E_USER_DEPRECATED
+                );
                 foreach (annotations\extractor::toArray($value) as $supportedOs) {
                     $this->addMethodSupportedOs($methodName, $supportedOs);
                 }
