@@ -777,7 +777,7 @@ class generator
                     // These types cannot be marked as nullable
                     return ': ' . $returnTypeName;
 
-                // PHP 8.2+: Standalone null, true, false types
+                    // PHP 8.2+: Standalone null, true, false types
                 case 'null':
                 case 'true':
                 case 'false':
@@ -863,7 +863,7 @@ class generator
     protected function getDefaultReturnValue(\ReflectionType $returnType, \reflectionMethod $method, \reflectionClass $class, bool $isStatic = false): string
     {
         $isNullable = $returnType->allowsNull();
-        
+
         // If nullable, return null
         if ($isNullable) {
             return 'null';
@@ -1266,13 +1266,13 @@ class generator
                 if (version_compare(PHP_VERSION, '8.4.0', '>=')) {
                     $reflector = $parameter->getDeclaringFunction()->getDeclaringClass();
                     $property = $reflector->getProperty($parameter->getName());
-                    
+
                     if ($property->isReadOnly()) {
                         // Skip readonly promoted properties in PHP 8.4+ (handled elsewhere)
                         continue;
                     }
                 }
-                
+
                 $propertiesCode .= $this->generatePromotedProperty($parameter);
             }
         }
@@ -1412,11 +1412,11 @@ class generator
         // PHP 8.0+: Named types
         if ($type instanceof \ReflectionNamedType) {
             $typeName = $type->getName();
-            
+
             // Handle special keywords: self, parent, static
             if ($method !== null) {
                 $declaringClass = $method->getDeclaringClass();
-                
+
                 if ($typeName === 'self') {
                     $typeName = $declaringClass->getName();
                 } elseif ($typeName === 'parent') {
@@ -1428,15 +1428,15 @@ class generator
                     return $nullable . $typeName;
                 }
             }
-            
+
             $nullable = $type->allowsNull() && $typeName !== 'mixed' && $typeName !== 'null' ? '?' : '';
-            
+
             // Handle special keyword types: self, parent, static
             // These must NEVER have a backslash prefix
             if (in_array($typeName, ['self', 'parent', 'static'])) {
                 return $nullable . $typeName;
             }
-            
+
             return $nullable . (!$type->isBuiltin() ? '\\' : '') . $typeName;
         }
 
@@ -1494,7 +1494,7 @@ class generator
             return true;
         }
         // Private read can't have more restrictive write visibility
-        
+
         return false;
     }
 

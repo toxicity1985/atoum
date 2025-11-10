@@ -248,9 +248,9 @@ class runner extends atoum\test
     {
         $this
             ->if($runner = new testedClass())
-            ->when(function() use ($runner) { $runner->callObservers(atoum\runner::runStart); })
+            ->when(function () use ($runner) { $runner->callObservers(atoum\runner::runStart); })
             ->if($runner->addObserver($observer = new \mock\atoum\atoum\observers\runner()))
-            ->when(function() use ($runner) { $runner->callObservers(atoum\runner::runStart); })
+            ->when(function () use ($runner) { $runner->callObservers(atoum\runner::runStart); })
             ->then
                 ->mock($observer)->call('handleEvent')->withArguments(atoum\runner::runStart, $runner)->once()
         ;

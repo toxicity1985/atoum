@@ -44,8 +44,8 @@ namespace atoum\atoum\mock\atoum\atoum
 namespace atoum\atoum\tests\units
 {
     use atoum\atoum;
-    use atoum\atoum\mock;
     use atoum\atoum\attributes as Attributes;
+    use atoum\atoum\mock;
 
     require_once __DIR__ . '/../runner.php';
 

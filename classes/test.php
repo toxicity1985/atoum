@@ -1197,6 +1197,12 @@ abstract class test implements observable, \countable
         }
 
         foreach ($runTestMethods as $method) {
+            $method = (string) $method;
+
+            if ($method === '') {
+                continue;
+            }
+
             if ($this->xdebugConfig != null) {
                 $engineClass = 'atoum\atoum\test\engines\concurrent';
             } else {

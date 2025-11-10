@@ -50,13 +50,13 @@ class realtime extends atoum\test
                 $this->testedInstance->addWriter($writer),
                 $event = uniqid()
             )
-            ->when(function() use (&$event, &$observable) { $this->testedInstance->handleEvent($event, $observable); })
+            ->when(function () use (&$event, &$observable) { $this->testedInstance->handleEvent($event, $observable); })
             ->then
                 ->mock($writer)
                     ->call('writeRealtimeReport')->withArguments($this->testedInstance, $event)->once
                     ->call('reset')->never
             ->if($event = atoum\runner::runStop)
-            ->when(function() use (&$event, &$observable) { $this->testedInstance->handleEvent($event, $observable); })
+            ->when(function () use (&$event, &$observable) { $this->testedInstance->handleEvent($event, $observable); })
             ->then
                 ->mock($writer)
                     ->call('writeRealtimeReport')->withArguments($this->testedInstance, $event)->once
@@ -66,13 +66,13 @@ class realtime extends atoum\test
                 $this->testedInstance->addWriter($otherWriter),
                 $event = uniqid()
             )
-            ->when(function() use (&$event, &$observable) { $this->testedInstance->handleEvent($event, $observable); })
+            ->when(function () use (&$event, &$observable) { $this->testedInstance->handleEvent($event, $observable); })
             ->then
                 ->mock($otherWriter)
                     ->call('writeRealtimeReport')->withArguments($this->testedInstance, $event)->once
                     ->call('reset')->never
             ->if($event = atoum\runner::runStop)
-            ->when(function() use (&$event, &$observable) { $this->testedInstance->handleEvent($event, $observable); })
+            ->when(function () use (&$event, &$observable) { $this->testedInstance->handleEvent($event, $observable); })
             ->then
                 ->mock($writer)
                     ->call('writeRealtimeReport')->withArguments($this->testedInstance, $event)->twice

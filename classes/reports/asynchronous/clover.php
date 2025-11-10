@@ -34,6 +34,10 @@ class clover extends atoum\reports\asynchronous
         if ($this->adapter->extension_loaded('libxml') === false) {
             throw new exceptions\runtime('libxml PHP extension is mandatory for clover report');
         }
+
+        if ($this->adapter->extension_loaded('dom') === false) {
+            throw new exceptions\runtime('dom PHP extension is mandatory for clover report');
+        }
     }
 
     public function getTitle(): string

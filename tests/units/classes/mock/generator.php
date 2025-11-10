@@ -3,9 +3,9 @@
 namespace atoum\atoum\tests\units\mock;
 
 use atoum\atoum;
+use atoum\atoum\attributes\Php;
 use atoum\atoum\mock;
 use atoum\atoum\mock\generator as testedClass;
-use atoum\atoum\attributes\Php;
 use atoum\atoum\test\adapter\call\decorators;
 
 require_once __DIR__ . '/../../runner.php';

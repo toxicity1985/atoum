@@ -49,7 +49,7 @@ class aliaser implements \arrayAccess
 
             return (isset($this->aliases[$contextKey][$aliasKey]) === true);
         }
-        
+
         return false;
     }
 

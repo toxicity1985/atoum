@@ -2,8 +2,6 @@
 
 namespace atoum\atoum\asserters;
 
-use atoum\atoum\asserters\integer;
-
 class phpString extends variable
 {
     protected ?string $charlist = null;

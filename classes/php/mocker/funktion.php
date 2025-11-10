@@ -90,7 +90,7 @@ class funktion extends mocker
         if ($functionName === null) {
             return $this->defaultNamespace;
         }
-        
+
         return $this->defaultNamespace . $functionName;
     }
 

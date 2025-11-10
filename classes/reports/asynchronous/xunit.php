@@ -21,6 +21,10 @@ class xunit extends atoum\reports\asynchronous
         if ($this->adapter->extension_loaded('libxml') === false) {
             throw new exceptions\runtime('libxml PHP extension is mandatory for xunit report');
         }
+
+        if ($this->adapter->extension_loaded('dom') === false) {
+            throw new exceptions\runtime('dom PHP extension is mandatory for xunit report');
+        }
     }
 
     public function handleEvent(string $event, atoum\observable $observable)

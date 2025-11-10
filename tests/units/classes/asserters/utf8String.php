@@ -5,8 +5,8 @@ namespace atoum\atoum\tests\units\asserters;
 use atoum\atoum;
 use atoum\atoum\asserter;
 use atoum\atoum\asserters;
-use atoum\atoum\tools\variable;
 use atoum\atoum\attributes as Attributes;
+use atoum\atoum\tools\variable;
 
 require_once __DIR__ . '/../../runner.php';
 
