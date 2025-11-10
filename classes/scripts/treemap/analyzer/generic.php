@@ -60,7 +60,7 @@ class generic implements analyzer
     public function getMetricFromFile(\splFileInfo $file): int|float
     {
         $result = call_user_func_array($this->callback, [$file]);
-        
+
         return is_numeric($result) ? $result : 0;
     }
 }

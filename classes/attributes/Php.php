@@ -14,4 +14,3 @@ class Php
         $this->operator = $operator;
     }
 }
-

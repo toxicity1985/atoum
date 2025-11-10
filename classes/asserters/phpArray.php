@@ -3,7 +3,6 @@
 namespace atoum\atoum\asserters;
 
 use atoum\atoum\exceptions;
-use atoum\atoum\asserters\integer;
 
 class phpArray extends variable implements \arrayAccess
 {
@@ -484,12 +483,12 @@ class phpArray extends variable implements \arrayAccess
         return parent::valueIsSet($message);
     }
 
-    protected function getKeysAsserter(): phpArray
+    protected function getKeysAsserter(): self
     {
         return $this->generator->__call('phpArray', [array_keys($this->valueIsSet()->value)]);
     }
 
-    protected function getValuesAsserter(): phpArray
+    protected function getValuesAsserter(): self
     {
         return $this->generator->__call('phpArray', [array_values($this->valueIsSet()->value)]);
     }

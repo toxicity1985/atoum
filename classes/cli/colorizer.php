@@ -78,7 +78,7 @@ class colorizer implements writer\decorator
         if ($string === null) {
             return '';
         }
-        
+
         if ($this->cli->isTerminal() === true && ($this->foreground !== null || $this->background !== null)) {
             $pattern = $this->pattern ?: '/^(.*)$/';
 

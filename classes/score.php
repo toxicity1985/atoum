@@ -279,7 +279,7 @@ class score
             'class' => $class,
             'method' => $method,
             'file' => $file,
-            'line' => is_numeric($line) ? (int)$line : $line,
+            'line' => is_numeric($line) ? (int) $line : $line,
             'value' => (string) $exception
         ];
 

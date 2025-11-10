@@ -3,8 +3,8 @@
 namespace atoum\atoum\tests\units;
 
 use atoum\atoum;
-use atoum\atoum\php as testedClass;
 use atoum\atoum\attributes as Attributes;
+use atoum\atoum\php as testedClass;
 
 require_once __DIR__ . '/../runner.php';
 

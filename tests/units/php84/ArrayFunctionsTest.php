@@ -3,8 +3,8 @@
 namespace atoum\atoum\tests\units\php84;
 
 use atoum\atoum;
-use atoum\atoum\tests\units\php84\fixtures\ArrayFunctions;
 use atoum\atoum\attributes\Php;
+use atoum\atoum\tests\units\php84\fixtures\ArrayFunctions;
 
 /**
  * Tests for PHP 8.4 Array Functions

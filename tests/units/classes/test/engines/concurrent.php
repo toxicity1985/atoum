@@ -54,7 +54,7 @@ class concurrent extends atoum\test
             ->if($engine = new testedClass())
             ->and($engine->setPhp($php = new \mock\atoum\atoum\php()))
             ->and($test = new \mock\atoum\atoum\test())
-            ->when(function() use ($engine, $test) { $engine->run($test); })
+            ->when(function () use ($engine, $test) { $engine->run($test); })
             ->if($test->getMockController()->getCurrentMethod = $method = uniqid())
             ->and($test->getMockController()->getPath = $testPath = uniqid())
             ->and($test->getMockController()->getPhpPath = $phpPath = uniqid())

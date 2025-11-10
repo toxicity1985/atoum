@@ -3,12 +3,12 @@
 namespace atoum\atoum\tests\units\php84;
 
 use atoum\atoum;
+use atoum\atoum\attributes\Php;
 use atoum\atoum\tests\units\php84\fixtures\Configuration;
 use atoum\atoum\tests\units\php84\fixtures\LegacyApi;
 use atoum\atoum\tests\units\php84\fixtures\ModernService;
 use atoum\atoum\tests\units\php84\fixtures\OldService;
 use atoum\atoum\tests\units\php84\fixtures\VersionedApi;
-use atoum\atoum\attributes\Php;
 
 /**
  * Tests for PHP 8.4 #[\Deprecated] attribute support

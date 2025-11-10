@@ -28,10 +28,10 @@ class inline extends atoum\test
         $this
             ->if($engine = new engines\inline())
             ->and($test = new \mock\atoum\atoum\test())
-            ->when(function() use ($engine, $test) { $engine->run($test); })
+            ->when(function () use ($engine, $test) { $engine->run($test); })
             ->if($test->getMockController()->getCurrentMethod = $method = uniqid())
             ->and($test->getMockController()->runTestMethod = $test)
-            ->when(function() use ($engine, $test) { $engine->run($test); })
+            ->when(function () use ($engine, $test) { $engine->run($test); })
             ->then
                 ->mock($test)
                     ->call('getScore')

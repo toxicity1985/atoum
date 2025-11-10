@@ -4,7 +4,6 @@ namespace atoum\atoum\php\tokenizer;
 
 use atoum\atoum\exceptions;
 use atoum\atoum\php\tokenizer\iterator\value;
-use atoum\atoum\report\fields\test\travis\start;
 
 class iterator extends value
 {
