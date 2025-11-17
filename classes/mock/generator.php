@@ -853,7 +853,12 @@ class generator
 
     protected function isVoid(\reflectionMethod $method): bool
     {
-        return $this->hasReturnType($method) ? $this->getReflectionTypeName($this->getReflectionType($method)) === 'void' : false;
+        if (!$this->hasReturnType($method)) {
+            return false;
+        }
+        
+        $returnTypeName = $this->getReflectionTypeName($this->getReflectionType($method));
+        return $returnTypeName === 'void' || $returnTypeName === 'never';
     }
 
     /**
@@ -939,9 +944,8 @@ class generator
                 case 'mixed':
                     return 'null';
                 case 'void':
-                    return '';
                 case 'never':
-                    return 'throw new \Exception("Method should never return")';
+                    return '';
                 case 'null':
                     return 'null';
                 case 'true':
